@@ -66,8 +66,8 @@ def load_images():
     print("Loading dataset with "+str(num_images)+" images.")
     splitidx = int(num_images*0.7)
 
-    images = np.empty([224, 224, 3, num_images])
-    targets = np.empty([len(CLASS_NAMES), num_images])
+    images = np.empty([num_images, 224, 224, 3])
+    targets = np.empty([num_images, len(CLASS_NAMES)])
 
     counter = 0
     while True:
