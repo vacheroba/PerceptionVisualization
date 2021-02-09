@@ -24,7 +24,7 @@ predictions = Dense(num_classes, activation='sigmoid')(x)
 model = Model(inputs=base_model.input, outputs=predictions)
 
 adam = Adam(lr=0.0001)
-model.compile(optimizer=adam, loss=BinaryCrossentropy(), metrics=['accuracy'])
+model.compile(optimizer=adam, loss='binary_crossentropy', metrics=['mse', 'categorical_crossentropy'])
 model.fit(X_train, Y_train, epochs=2, batch_size=64)
 
 preds = model.evaluate(X_test, Y_test)
