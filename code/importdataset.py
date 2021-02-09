@@ -110,7 +110,6 @@ def save_dataset():
     hf.create_dataset('X_Test', data=X_test)
     hf.create_dataset('Y_Train', data=Y_train)
     hf.create_dataset('Y_Test', data=Y_test)
-    hf.create_dataset('classes', data=classes)
     hf.close()
 
 
@@ -119,8 +118,7 @@ def load_dataset():
     datasetpath = os.path.join(basepath, "../datasets/dataset.h5")
     hf = h5py.File(datasetpath, 'r')
     return hf.get('X_Train').value, hf.get('X_Test').value, \
-        hf.get('Y_Train').value, hf.get('Y_Test').value, \
-        hf.get('classes').value
+        hf.get('Y_Train').value, hf.get('Y_Test').value
 
 
 

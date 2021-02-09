@@ -9,7 +9,8 @@ from keras.models import Sequential, Model, load_model
 from keras.optimizers import SGD, Adam
 from tensorflow.keras.losses import MeanSquaredError
 
-X_train, Y_train, X_test, Y_test, classes = importdataset.load_dataset()
+class_names = importdataset.CLASS_NAMES
+X_train, Y_train, X_test, Y_test = importdataset.load_dataset()
 
 img_height, img_width = 224, 224
 num_classes = 20
