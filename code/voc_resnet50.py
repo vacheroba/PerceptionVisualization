@@ -44,7 +44,7 @@ model.add(GlobalAveragePooling2D())
 model.add(Dense(num_classes, activation='sigmoid'))
 
 model.compile(optimizer='adam',
-              loss='bp_mll_loss',
+              loss=bp_mll_loss,
               metrics=[bp_mll_loss, euclidean_distance_loss, BinaryCrossentropy])
 model.fit(X_train, Y_train, epochs=100, batch_size=64)
 
