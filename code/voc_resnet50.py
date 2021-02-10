@@ -46,6 +46,12 @@ preds = model.evaluate(X_test, Y_test)
 print("Loss = " + str(preds[0]))
 print("Test Accuracy = " + str(preds[1]))
 
+for i in range(0, 20):
+    y = model.predict(X_test[i, :, :, :])
+    print(y)
+    print(Y_test[i, :, :, :])
+    print("\n")
+
 model.summary()
 
 
