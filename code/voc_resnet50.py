@@ -47,9 +47,9 @@ print("Loss = " + str(preds[0]))
 print("Test Accuracy = " + str(preds[1]))
 
 for i in range(0, 20):
-    y = model.predict(X_test[i, :, :, :])
+    y = model.predict(X_test[i, :, :, :].reshape([1, 224, 224, 3]))
     print(y)
-    print(Y_test[i, :, :, :])
+    print(Y_test[i, :, :, :].reshape([1, 224, 224, 3]))
     print("\n")
 
 model.summary()
