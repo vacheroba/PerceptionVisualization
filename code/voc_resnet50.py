@@ -45,7 +45,7 @@ model.add(Dense(num_classes, activation='sigmoid'))
 
 model.compile(optimizer='adam',
               loss=bp_mll_loss,
-              metrics=[bp_mll_loss, euclidean_distance_loss, BinaryCrossentropy])
+              metrics=[bp_mll_loss, euclidean_distance_loss])
 model.fit(X_train, Y_train, epochs=100, batch_size=64)
 
 basepath = os.getcwd()
