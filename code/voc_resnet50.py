@@ -34,13 +34,17 @@ base_model.trainable = False
 inputs = Input(shape=(img_height, img_width, 3))
 x = base_model(inputs, training=False)
 x = GlobalAveragePooling2D()(x)
-outputs = Dense(num_classes, activation='sigmoid')(x)
+outputs = Dense(num_classes, activation='softmax')(x)
 model = Model(inputs, outputs)
 
 model.compile(optimizer=Adam(),
               loss=euclidean_distance_loss,
               metrics=[metrics.BinaryAccuracy(), euclidean_distance_loss])
-model.fit(X_train, Y_train, epochs=2, batch_size=64)
+model.fit(X_train, Y_train, epochs=100, batch_size=64)
+
+basepath = os.getcwd()
+imagespath = os.path.join(basepath, "../models/checkpoint")
+model.save(imagespath)
 
 preds = model.evaluate(X_test, Y_test)
 print("Loss = " + str(preds[0]))
@@ -49,7 +53,7 @@ print("Test Accuracy = " + str(preds[1]))
 for i in range(0, 20):
     y = model.predict(X_test[i, :, :, :].reshape([1, 224, 224, 3]))
     print(y)
-    print(Y_test[i, :, :, :].reshape([1, 224, 224, 3]))
+    print(Y_test[i, :].reshape([1, 20]))
     print("\n")
 
 model.summary()

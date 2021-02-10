@@ -61,8 +61,8 @@ def load_images():
     basepath = os.getcwd()
     imagespath = os.path.join(basepath, "../datasets/VOC2012/JPEGImages")
 
-    targets: dict = get_annotations()
-    num_images = len(targets)
+    annotations = get_annotations()
+    num_images = len(annotations)
     print("Loading dataset with "+str(num_images)+" images.")
     splitidx = int(num_images*0.7)
 
@@ -72,13 +72,15 @@ def load_images():
     counter = 0
     while True:
         try:
-            item = targets.popitem()
+            item = annotations.popitem()
         except:
+            print("Exiting after image count "+str(counter))
             break
 
-        image: Image = Image.open(os.path.join(imagespath, item[0])).resize((224, 224))
+        image = Image.open(os.path.join(imagespath, item[0])+".jpg").resize((224, 224))
         images[counter, :, :, :] = np.array(image)
         targets[counter, :] = np.array(item[1])
+        counter += 1
 
     return images[0:splitidx, :, :, :], targets[0:splitidx, :], \
         images[splitidx:, :, :, :], targets[splitidx:, :], \
