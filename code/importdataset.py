@@ -64,7 +64,6 @@ def load_images():
     annotations = get_annotations()
     num_images = len(annotations)
     print("Loading dataset with "+str(num_images)+" images.")
-    splitidx = int(num_images*0.7)
 
     images = np.empty([num_images, 224, 224, 3])
     targets = np.empty([num_images, len(CLASS_NAMES)])
@@ -75,12 +74,18 @@ def load_images():
             item = annotations.popitem()
         except:
             print("Exiting after image count "+str(counter))
+            images = images[0:counter, :, :, :]
+            targets = targets[0:counter, :]
             break
 
         image = Image.open(os.path.join(imagespath, item[0])+".jpg").resize((224, 224))
-        images[counter, :, :, :] = np.array(image)
-        targets[counter, :] = np.array(item[1])
-        counter += 1
+
+        if sum(item[1]) == 1:
+            images[counter, :, :, :] = np.array(image)
+            targets[counter, :] = np.array(item[1])
+            counter += 1
+
+    splitidx = int(counter * 0.7)
 
     return images[0:splitidx, :, :, :], targets[0:splitidx, :], \
         images[splitidx:, :, :, :], targets[splitidx:, :], \
@@ -88,7 +93,7 @@ def load_images():
 
 def save_dataset():
     basepath = os.getcwd()
-    datasetpath = os.path.join(basepath, "../datasets/dataset.h5")
+    datasetpath = os.path.join(basepath, "../datasets/dataset_singleclass.h5")
 
     X_train_orig, Y_train_orig, X_test_orig, Y_test_orig, classes = load_images()
 

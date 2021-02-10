@@ -4,13 +4,14 @@ from PIL import Image
 import os
 import importdataset
 from keras import applications, Input
-from keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPool2D, GlobalAveragePooling2D
+from keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPool2D, GlobalAveragePooling2D, AveragePooling2D, Flatten
 from keras.models import Sequential, Model, load_model
 from keras.optimizers import SGD, Adam
 from tensorflow.keras.losses import MeanSquaredError, BinaryCrossentropy
 from keras import metrics
+from keras.models import Sequential
 import keras.backend as K
-
+from bpmll import bp_mll_loss
 
 def euclidean_distance_loss(y_true, y_pred):
     return K.sqrt(K.sum(K.square(y_pred - y_true), axis=-1))
@@ -24,22 +25,27 @@ num_classes = 20
 
 base_model = applications.resnet50.ResNet50(weights='imagenet', include_top=False,
                                             input_shape=(img_height, img_width, 3))
-base_model.trainable = False
+#base_model.trainable = False
 
 #x = base_model.output
 #x = GlobalAveragePooling2D()(x)
 #predictions = Dense(num_classes, activation='sigmoid')(x)
 #model = Model(inputs=base_model.input, outputs=predictions)
 
-inputs = Input(shape=(img_height, img_width, 3))
-x = base_model(inputs, training=False)
-x = GlobalAveragePooling2D()(x)
-outputs = Dense(num_classes, activation='sigmoid')(x)
-model = Model(inputs, outputs)
+#inputs = Input(shape=(img_height, img_width, 3))
+#x = base_model(inputs, training=False)
+#x = GlobalAveragePooling2D()(x)
+#outputs = Dense(num_classes, activation='sigmoid')(x)
+#model = Model(inputs, outputs)
 
-model.compile(optimizer=Adam(),
-              loss=euclidean_distance_loss,
-              metrics=[metrics.BinaryAccuracy(), euclidean_distance_loss])
+model = Sequential()
+model.add(base_model)
+model.add(GlobalAveragePooling2D())
+model.add(Dense(num_classes, activation='sigmoid'))
+
+model.compile(optimizer='adam',
+              loss='bp_mll_loss',
+              metrics=[bp_mll_loss, euclidean_distance_loss, BinaryCrossentropy])
 model.fit(X_train, Y_train, epochs=100, batch_size=64)
 
 basepath = os.getcwd()
