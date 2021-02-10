@@ -34,7 +34,7 @@ base_model.trainable = False
 inputs = Input(shape=(img_height, img_width, 3))
 x = base_model(inputs, training=False)
 x = GlobalAveragePooling2D()(x)
-outputs = Dense(num_classes, activation='softmax')(x)
+outputs = Dense(num_classes, activation='sigmoid')(x)
 model = Model(inputs, outputs)
 
 model.compile(optimizer=Adam(),
