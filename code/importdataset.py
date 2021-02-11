@@ -57,7 +57,7 @@ def get_annotations():
 
 
 # Returns the dataset
-def load_images():
+def load_images(sigleclass=False):
     basepath = os.getcwd()
     imagespath = os.path.join(basepath, "../datasets/VOC2012/JPEGImages")
 
@@ -80,7 +80,7 @@ def load_images():
 
         image = Image.open(os.path.join(imagespath, item[0])+".jpg").resize((224, 224))
 
-        if sum(item[1]) == 1:
+        if sigleclass and sum(item[1]) == 1:
             images[counter, :, :, :] = np.array(image)
             targets[counter, :] = np.array(item[1])
             counter += 1
