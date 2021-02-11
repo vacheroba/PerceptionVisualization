@@ -80,7 +80,7 @@ def load_images(sigleclass=False):
 
         image = Image.open(os.path.join(imagespath, item[0])+".jpg").resize((224, 224))
 
-        if sigleclass and sum(item[1]) == 1:
+        if not sigleclass or sum(item[1]) == 1:
             images[counter, :, :, :] = np.array(image)
             targets[counter, :] = np.array(item[1])
             counter += 1
