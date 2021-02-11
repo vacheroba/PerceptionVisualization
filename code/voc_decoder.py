@@ -62,7 +62,7 @@ Y_test = hf.get('X_Test').value
 hf.close()
 hf = h5py.File(encoder_dataset_path, 'r')
 X_train = hf.get('E_train').value
-X_tTest = hf.get('E_test').value
+X_test = hf.get('E_test').value
 hf.close()
 
 model.compile(optimizer='adam',
@@ -74,6 +74,9 @@ model.fit(X_train, Y_train, epochs=100, batch_size=64)
 modelpath = os.path.join(basepath, "../models/decoder")
 model.save(modelpath)
 
+preds = model.evaluate(X_test, Y_test)
+print("Loss = " + str(preds[0]))
+print("Test Accuracy = " + str(preds[1]))
 
 
 
