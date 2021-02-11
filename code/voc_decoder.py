@@ -71,6 +71,9 @@ model.compile(optimizer='adam',
 
 model.fit(X_train, Y_train, epochs=100, batch_size=64)
 
+modelpath = os.path.join(basepath, "../models/decoder")
+model.save(modelpath)
+
 
 
 
