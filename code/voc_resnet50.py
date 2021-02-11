@@ -12,9 +12,7 @@ from keras import metrics
 from keras.models import Sequential
 import keras.backend as K
 from bpmll import bp_mll_loss
-
-def euclidean_distance_loss(y_true, y_pred):
-    return K.sqrt(K.sum(K.square(y_pred - y_true), axis=-1))
+import utils
 
 
 class_names = importdataset.CLASS_NAMES
@@ -45,12 +43,12 @@ model.add(Dense(num_classes, activation='sigmoid'))
 
 model.compile(optimizer='adam',
               loss=bp_mll_loss,
-              metrics=[bp_mll_loss, euclidean_distance_loss])
+              metrics=[bp_mll_loss, utils.euclidean_distance_loss()])
 model.fit(X_train, Y_train, epochs=100, batch_size=64)
 
 basepath = os.getcwd()
-imagespath = os.path.join(basepath, "../models/checkpoint")
-model.save(imagespath)
+modelpath = os.path.join(basepath, "../models/classifier")
+model.save(modelpath)
 
 preds = model.evaluate(X_test, Y_test)
 print("Loss = " + str(preds[0]))

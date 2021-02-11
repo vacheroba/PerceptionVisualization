@@ -93,7 +93,7 @@ def load_images():
 
 def save_dataset():
     basepath = os.getcwd()
-    datasetpath = os.path.join(basepath, "../datasets/dataset_singleclass.h5")
+    datasetpath = os.path.join(basepath, "../datasets/dataset.h5")
 
     X_train_orig, Y_train_orig, X_test_orig, Y_test_orig, classes = load_images()
 
