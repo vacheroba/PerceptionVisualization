@@ -84,6 +84,8 @@ def load_images():
             images[counter, :, :, :] = np.array(image)
             targets[counter, :] = np.array(item[1])
             counter += 1
+            if counter % 100 == 0:
+                print(counter)
 
     splitidx = int(counter * 0.7)
 
