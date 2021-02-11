@@ -39,7 +39,7 @@ E_test = encoder.predict(X_test)
 
 # Saves in h5
 print("Saving result")
-datasetpath = os.path.join(basepath, "../datasets/dataset.h5")
+datasetpath = os.path.join(basepath, "../datasets/dataset_encoder.h5")
 hf = h5py.File(datasetpath, 'w')
 hf.create_dataset('E_train', data=E_train)
 hf.create_dataset('E_test', data=E_test)
