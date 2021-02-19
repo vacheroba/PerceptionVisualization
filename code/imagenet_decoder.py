@@ -18,9 +18,12 @@ from bpmll import bp_mll_loss
 import utils
 import h5py
 import tensorflow as tf
+from tensorflow.keras.layers.experimental.preprocessing import Rescaling
 
 physical_devices = tf.config.list_physical_devices('GPU')
-tf.config.experimental.set_memory_growth(physical_devices[0], True)
+
+for h in physical_devices:
+    tf.config.experimental.set_memory_growth(h, True)
 
 # Build a reversed VGG16 for decoding
 model = Sequential()
@@ -49,6 +52,7 @@ model.add(Conv2D(filters=64, padding="same", kernel_size=3, activation="relu"))
 model.add(Conv2D(filters=64, padding="same", kernel_size=3, activation="relu"))
 # Output (conv)
 model.add(Conv2D(filters=3, padding="same", kernel_size=3, activation="sigmoid"))
+model.add(Rescaling(255.0, offset=0.0))
 
 model.summary()
 
@@ -68,7 +72,7 @@ model.compile(optimizer='adam',
 
 model.fit(X_train, Y_train, epochs=100, batch_size=64)
 
-modelpath = os.path.join(basepath, "../models/decoder")
+modelpath = os.path.join(basepath, "../models/decoder_imagenet")
 model.save(modelpath)
 
 preds = model.evaluate(X_train, Y_train)

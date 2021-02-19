@@ -20,7 +20,8 @@ import h5py
 import tensorflow as tf
 
 physical_devices = tf.config.list_physical_devices('GPU')
-tf.config.experimental.set_memory_growth(physical_devices[0], True)
+for h in physical_devices:
+    tf.config.experimental.set_memory_growth(h, True)
 
 basepath = os.getcwd()
 datasetpath = os.path.join(basepath, "../datasets/dataset_encoder_imagenet_onlyimg.h5")
@@ -44,7 +45,7 @@ num_images = 4000
 
 hf = h5py.File(datasetpath, 'r')
 
-X_train = hf.get('X_Train').value
+X_train = hf.get('X_train').value
 E_train = np.zeros([num_images, 19, 19, 2560], dtype=np.float32)
 print("Loading images")
 
