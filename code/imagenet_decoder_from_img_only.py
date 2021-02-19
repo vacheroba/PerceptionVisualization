@@ -97,6 +97,6 @@ for epoch in range(0, epochs):
 modelpath = os.path.join(basepath, "../models/decoder_imagenet")
 model.save(modelpath)
 
-preds = model.evaluate(X_train, Y_train)
-print("Loss = " + str(preds[0]))
-print("Test Accuracy = " + str(preds[1]))
+# preds = model.evaluate(X_train, Y_train)
+# print("Loss = " + str(preds[0]))
+# print("Test Accuracy = " + str(preds[1]))
