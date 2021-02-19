@@ -1,5 +1,4 @@
-# Takes the EfficientNetB7 last convolutional results and creates the dataset in dataset_encoder_imagenet
-# to then be used to train the decoder
+# Takes the dataset_encoder_imagenet_onlyimg and computes dataset_encoder_imagenet
 
 import pandas as pd
 import numpy as np
@@ -24,7 +23,7 @@ physical_devices = tf.config.list_physical_devices('GPU')
 tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 basepath = os.getcwd()
-imagenetpath = os.path.join(basepath, "../datasets/ImageNet/imagenet_object_localization_patched2019.tar/ILSVRC/Data/CLS-LOC/test")
+datasetpath = os.path.join(basepath, "../datasets/dataset_encoder_imagenet_onlyimg.h5")
 
 base_model = tf.keras.applications.EfficientNetB7(
     include_top=True,
@@ -43,24 +42,15 @@ encoder.summary()
 
 num_images = 4000
 
-X_train = np.zeros([num_images, 600, 600, 3], dtype=np.uint8)
+hf = h5py.File(datasetpath, 'r')
+
+X_train = hf.get('X_Train').value
 E_train = np.zeros([num_images, 19, 19, 2560], dtype=np.float32)
 print("Loading images")
-image_paths = os.listdir(imagenetpath)
 
 for i in range(0, num_images):
     if i % 100 == 0:
         print(i)
-    img = Image.open(os.path.join(imagenetpath, image_paths[i]))
-    img = img.resize((600, 600))
-    imgarray = np.array(img)
-    if imgarray.shape == (600, 600):
-        h = np.zeros([600, 600, 3]).astype(np.uint8)
-        h[:, :, 0] = imgarray
-        h[:, :, 1] = imgarray
-        h[:, :, 2] = imgarray
-        imgarray = h
-    X_train[i, :, :, :] = imgarray
     E_train[i, :, :, :] = encoder.predict(X_train[i:i+1, :, :, :])
 
 # Gets outputs of modified model
@@ -72,31 +62,9 @@ print(X_train.shape)
 
 # Saves in h5
 print("Saving result")
-datasetpath = os.path.join(basepath, "../datasets/dataset_encoder_imagenet_onlyimg.h5")
+datasetpath = os.path.join(basepath, "../datasets/dataset_encoder_imagenet.h5")
 hf = h5py.File(datasetpath, 'w')
 hf.create_dataset('X_train', data=X_train)
 hf.create_dataset('E_train', data=E_train)
 hf.close()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
