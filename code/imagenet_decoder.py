@@ -54,7 +54,7 @@ model.add(Conv2D(filters=64, padding="same", kernel_size=3, activation="relu"))
 model.add(Conv2D(filters=64, padding="same", kernel_size=3, activation="relu"))
 # Output (conv)
 model.add(Conv2D(filters=3, padding="same", kernel_size=3, activation="sigmoid"))
-model.add(Rescaling(255.0, offset=0.0))
+# model.add(Rescaling(255.0, offset=0.0))
 
 model.summary()
 
@@ -64,7 +64,7 @@ encoder_dataset_path = os.path.join(basepath, "../datasets/dataset_encoder_image
 
 # Load targets (The targets for the decoder are the original inputs)
 hf = h5py.File(encoder_dataset_path, 'r')
-Y_train = hf.get('X_train').value
+Y_train = (hf.get('X_train').value.astype(np.float32))/255.0
 X_train = hf.get('E_train').value
 hf.close()
 
