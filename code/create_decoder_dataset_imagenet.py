@@ -39,9 +39,12 @@ base_model = tf.keras.applications.EfficientNetB0(
 encoder = keras.Model(base_model.input, base_model.get_layer("top_activation").output)
 del base_model
 
+modelpath = os.path.join(basepath, "../models/encoder_imagenet")
+encoder.save(modelpath)
+
 encoder.summary()
 
-num_images = 20000
+num_images = 5000
 
 # For B7
 # X_train = np.zeros([num_images, 600, 600, 3], dtype=np.uint8)
@@ -73,6 +76,8 @@ for i in range(0, num_images):
     X_train[i, :, :, :] = imgarray
     # E_train[i, :, :, :] = encoder.predict(X_train[i:i+1, :, :, :])
 
+# Rescales images
+
 # Gets outputs of modified model
 print("Predicting")
 # E_train = encoder.predict(X_train)
@@ -82,10 +87,12 @@ print(X_train.shape)
 
 # Saves in h5
 print("Saving result")
-datasetpath = os.path.join(basepath, "../datasets/dataset_encoder_imagenet.h5")
+datasetpath = os.path.join(basepath, "../datasets/dataset_encoder_imagenet_rescaled.h5")
 hf = h5py.File(datasetpath, 'w')
-hf.create_dataset('X_train', data=X_train)
 hf.create_dataset('E_train', data=E_train)
+del E_train
+X_train = X_train.astype(np.float32)/255.0
+hf.create_dataset('X_train', data=X_train)
 hf.close()
 
 
