@@ -19,6 +19,7 @@ from bpmll import bp_mll_loss
 import utils
 import h5py
 import tensorflow as tf
+import gc
 
 physical_devices = tf.config.list_physical_devices('GPU')
 tf.config.experimental.set_memory_growth(physical_devices[0], True)
@@ -39,12 +40,7 @@ base_model = tf.keras.applications.EfficientNetB0(
 encoder = keras.Model(base_model.input, base_model.get_layer("top_activation").output)
 del base_model
 
-modelpath = os.path.join(basepath, "../models/encoder_imagenet")
-encoder.save(modelpath)
-
-encoder.summary()
-
-num_images = 5000
+num_images = 20000
 
 # For B7
 # X_train = np.zeros([num_images, 600, 600, 3], dtype=np.uint8)
@@ -91,6 +87,7 @@ datasetpath = os.path.join(basepath, "../datasets/dataset_encoder_imagenet_resca
 hf = h5py.File(datasetpath, 'w')
 hf.create_dataset('E_train', data=E_train)
 del E_train
+gc.collect()
 X_train = X_train.astype(np.float32)/255.0
 hf.create_dataset('X_train', data=X_train)
 hf.close()

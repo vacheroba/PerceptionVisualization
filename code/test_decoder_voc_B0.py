@@ -128,7 +128,7 @@ classifier.summary()
 
 # Load targets (The targets for the decoder are the original inputs, X in main dataset)
 with h5py.File(decoder_dataset_path, 'r') as hf, h5py.File(voc_dataset_path, 'r') as voc:
-    X_train = hf.get('X_train').value
+    X_train = voc.get('X_Train').value
     E_train = hf.get('E_train').value
 
 root = tkinter.Tk()

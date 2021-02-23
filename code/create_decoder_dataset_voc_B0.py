@@ -20,7 +20,6 @@ import tensorflow as tf
 # Loads model from classifier checkpoint
 print("Loading model")
 basepath = os.getcwd()
-modelpath = os.path.join(basepath, "../models/classifier")
 
 classifier = tf.keras.applications.EfficientNetB0(
     include_top=True,

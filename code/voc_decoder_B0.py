@@ -24,10 +24,10 @@ import math
 import gc
 
 basepath = os.getcwd()
-encoder_dataset_path = os.path.join(basepath, "../datasets/dataset_encoder_imagenet_rescaled.h5") # "../datasets/dataset_encoder_voc_B0.h5")
+encoder_dataset_path = os.path.join(basepath, "../datasets/dataset_encoder_voc_B0.h5") # "../datasets/dataset_encoder_imagenet_rescaled.h5"
 voc_dataset_path = os.path.join(basepath, "../datasets/dataset.h5")
 
-BATCH_SIZE = 64  # 16 for my pc
+BATCH_SIZE = 64 # 16 for my pc
 NUM_EPOCHS = 100
 
 with h5py.File(encoder_dataset_path, 'r') as hf, h5py.File(voc_dataset_path, 'r') as voc:
@@ -46,10 +46,10 @@ for h in physical_devices:
 
 
 def generator():
-    with h5py.File(encoder_dataset_path, 'r') as hf:
+    with h5py.File(encoder_dataset_path, 'r') as hf, h5py.File(voc_dataset_path, 'r') as voc:
         for i in range(0, NUM_IMAGES-BATCH_SIZE, BATCH_SIZE):
             # yield tf.convert_to_tensor(hf["E_train"][i:i + BATCH_SIZE, :, :, :], dtype=tf.float32), tf.convert_to_tensor(hf["X_train"][i:i + BATCH_SIZE, :, :, :], dtype=tf.float32)
-            yield tf.convert_to_tensor(hf["E_train"][i:i + BATCH_SIZE, :, :, :], dtype=tf.float32), tf.convert_to_tensor(hf["X_train"][i:i + BATCH_SIZE, :, :, :], dtype=tf.float32)
+            yield tf.convert_to_tensor(hf["E_train"][i:i + BATCH_SIZE, :, :, :], dtype=tf.float32), tf.convert_to_tensor(voc["X_Train"][i:i + BATCH_SIZE, :, :, :], dtype=tf.float32)
 
 
 # For tensorflow 2.4
