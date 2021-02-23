@@ -32,6 +32,12 @@ NUM_EPOCHS = 10
 
 with h5py.File(encoder_dataset_path, 'r') as hf, h5py.File(voc_dataset_path, 'r') as voc:
     NUM_IMAGES = hf["E_train"].shape[0]
+    print("Dataset info")
+    print(hf["E_train"].shape)
+    print(voc["X_Train"].shape)
+    print(hf["E_train"][1, :, :, :])
+    print(voc["X_Train"][1, :, :, :])
+
 
 physical_devices = tf.config.list_physical_devices('GPU')
 
@@ -102,11 +108,16 @@ model.compile(optimizer='adam',
               loss="binary_crossentropy",
               metrics=[losses.binary_crossentropy, utils.euclidean_distance_loss])
 
-# model.fit(X_train, Y_train, epochs=100, batch_size=64)
+# with h5py.File(encoder_dataset_path, 'r') as hf, h5py.File(voc_dataset_path, 'r') as voc:
+#    model.fit(hf["E_train"][:, :, :, :], voc["X_Train"][:, :, :, :], epochs=NUM_EPOCHS, batch_size=64)
+
+
 # for i in range(0, math.floor(NUM_EPOCHS/10)):
 #    model.fit(ds_counter, epochs=10, batch_size=BATCH_SIZE, steps_per_epoch=math.floor(NUM_IMAGES/BATCH_SIZE))
 #    gc.collect()
-model.fit(ds_counter, epochs=100, batch_size=BATCH_SIZE, steps_per_epoch=math.floor(NUM_IMAGES/BATCH_SIZE))
+
+
+model.fit(ds_counter, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, steps_per_epoch=math.floor(NUM_IMAGES/BATCH_SIZE))
 
 modelpath = os.path.join(basepath, "../models/decoder_imagenet_rescaled")
 model.save(modelpath)

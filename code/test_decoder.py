@@ -136,7 +136,7 @@ root.geometry('1000x1000')
 canvas = tkinter.Canvas(root, width=999, height=999)
 canvas.pack()
 
-for i in range(0, 20):
+for i in range(150, 190):
     y = ((decoder.predict(X_test[i:i+1, :, :, :]))*255).squeeze().astype(np.uint8)
     x = (Y_test[i:i+1, :, :, :]*255).squeeze().astype(np.uint8)
     res = np.concatenate((x, y), axis=1)
