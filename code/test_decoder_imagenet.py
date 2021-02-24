@@ -137,7 +137,7 @@ canvas = tkinter.Canvas(root, width=999, height=999)
 canvas.pack()
 
 for i in range(0, 20):
-    encoding = encoder.predict(X_train[i:i+1, :, :]*255)
+    encoding = (E_train[i:i+1, :, :])*255  # encoder.predict(X_train[i:i+1, :, :]*255)
     print("Encoding")
     print(encoding.shape)
     x = ((X_train[i:i+1, :, :])*255).squeeze().astype(np.uint8)
