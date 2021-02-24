@@ -110,7 +110,7 @@ hf = h5py.File(encoder_dataset_path, 'r')
 # dataset = tf.data.Dataset.zip((X_train, Y_train)).batch(64, drop_remainder=True)
 
 # optimizer=tf.keras.optimizers.SGD(learning_rate=0.01, momentum=0.09, nesterov=True)
-model.compile(optimizer='adam',
+model.compile(optimizer=tf.keras.optimizers.SGD(learning_rate=0.01, momentum=0.9, nesterov=True),
               loss="binary_crossentropy",
               metrics=[losses.binary_crossentropy, utils.euclidean_distance_loss])
 
