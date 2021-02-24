@@ -60,6 +60,7 @@ def generator():
 # For tensorflow 2.3
 ds_counter = tf.data.Dataset.from_generator(generator, (tf.float32, tf.float32), (tf.TensorShape([BATCH_SIZE, 7, 7, 1280]), tf.TensorShape([BATCH_SIZE, 224, 224, 3])))
 
+ds_counter = ds_counter.shuffle(10, reshuffle_each_iteration=True)
 ds_counter = ds_counter.repeat(NUM_EPOCHS)
 
 # Build a reversed VGG16 for decoding
