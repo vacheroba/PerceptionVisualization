@@ -50,8 +50,9 @@ num_images = 20000
 X_train = np.zeros([num_images, 224, 224, 3], dtype=np.uint8)
 E_train = np.zeros([num_images, 7, 7, 1280], dtype=np.float32)
 
-print("Loading images")
+print("Loading images, total")
 image_paths = os.listdir(imagenetpath)
+print(len(image_paths))
 
 # img_size = 600
 img_size = 224
