@@ -124,7 +124,7 @@ model.compile(optimizer='adam',
 
 model.fit(ds_counter, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, steps_per_epoch=math.floor(NUM_IMAGES/BATCH_SIZE))
 
-modelpath = os.path.join(basepath, "../models/decoder_imagenet_rescaled")
+modelpath = os.path.join(basepath, "../models/decoder_voc_B0")
 model.save(modelpath)
 
 # preds = model.evaluate(X_train, Y_train)
