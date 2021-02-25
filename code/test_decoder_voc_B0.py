@@ -105,9 +105,11 @@ physical_devices = tf.config.list_physical_devices('GPU')
 tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 basepath = os.getcwd()
-decoder_path = os.path.join(basepath, "../models/decoder_imagenet_rescaled")
-decoder_dataset_path = os.path.join(basepath, "../datasets/dataset_encoder_imagenet_rescaled.h5")
+decoder_path = os.path.join(basepath, "../models/decoder_voc_B0")
+decoder_dataset_path = os.path.join(basepath, "../datasets/dataset_encoder_voc_B0.h5")
 voc_dataset_path = os.path.join(basepath, "../datasets/dataset.h5")
+classes_file = open(os.path.join(basepath, "../datasets/imagenet_classes.txt"))
+imagenet_classes = classes_file.readlines()
 
 decoder = keras.models.load_model(decoder_path, custom_objects={"bp_mll_loss": bp_mll_loss, "euclidean_distance_loss": utils.euclidean_distance_loss})
 
@@ -128,15 +130,16 @@ classifier.summary()
 
 # Load targets (The targets for the decoder are the original inputs, X in main dataset)
 with h5py.File(decoder_dataset_path, 'r') as hf, h5py.File(voc_dataset_path, 'r') as voc:
-    X_train = voc.get('X_Train').value
-    E_train = hf.get('E_train').value
+    X_train = voc.get('X_Test').value  # when using decoder dataset voc b0 or 'X_Test'
+    # X_train = hf.get('X_train').value  # when using decoder dataset imagenet
+    # E_train = hf.get('E_train').value
 
 root = tkinter.Tk()
 root.geometry('1000x1000')
 canvas = tkinter.Canvas(root, width=999, height=999)
 canvas.pack()
 
-for i in range(0, 20):
+for i in range(20, 40):
     encoding = encoder.predict(X_train[i:i+1, :, :]*255)
     print("Encoding")
     print(encoding.shape)
@@ -147,6 +150,7 @@ for i in range(0, 20):
     classes = classifier.predict(X_train[i:i+1, :, :]*255).squeeze()
     print(classes)
     print(np.argmax(classes))
+    print(imagenet_classes[np.argmax(classes)])
 
     image = Image.fromarray(res)
     image = ImageTk.PhotoImage(image)

@@ -110,7 +110,7 @@ hf = h5py.File(encoder_dataset_path, 'r')
 # dataset = tf.data.Dataset.zip((X_train, Y_train)).batch(64, drop_remainder=True)
 
 model.compile(optimizer='adam',
-              loss="binary_crossentropy",
+              loss=utils.euclidean_distance_loss,  # "binary_crossentropy",
               metrics=[losses.binary_crossentropy, utils.euclidean_distance_loss])
 
 # with h5py.File(encoder_dataset_path, 'r') as hf, h5py.File(voc_dataset_path, 'r') as voc:
