@@ -5,7 +5,7 @@ import os
 import importdataset
 from keras import applications, Input
 from keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPool2D
-from keras.layers import GlobalAveragePooling2D, AveragePooling2D, Flatten, Conv2DTranspose
+from keras.layers import GlobalAveragePooling2D, AveragePooling2D, Flatten, Conv2DTranspose, BatchNormalization
 from keras.models import Sequential, Model, load_model
 from keras.optimizers import SGD, Adam
 from tensorflow.keras.losses import MeanSquaredError, BinaryCrossentropy
@@ -68,16 +68,19 @@ ds_counter = ds_counter.repeat(NUM_EPOCHS)
 model = Sequential()
 # First block (pool->conv->conv->conv)
 model.add(Conv2DTranspose(input_shape=(7, 7, 1280), filters=512, kernel_size=2, padding="same", strides=2))
+model.add(BatchNormalization())
 model.add(Conv2D(filters=512, padding="same", kernel_size=3, activation="relu"))
 model.add(Conv2D(filters=512, padding="same", kernel_size=3, activation="relu"))
 model.add(Conv2D(filters=512, padding="same", kernel_size=3, activation="relu"))
 # Second block (pool->conv->conv->conv)
 model.add(Conv2DTranspose(filters=512, kernel_size=2, padding="same", strides=2))
+model.add(BatchNormalization())
 model.add(Conv2D(filters=512, padding="same", kernel_size=3, activation="relu"))
 model.add(Conv2D(filters=512, padding="same", kernel_size=3, activation="relu"))
 model.add(Conv2D(filters=512, padding="same", kernel_size=3, activation="relu"))
 # Third block (pool->conv->conv->conv)
 model.add(Conv2DTranspose(filters=256, kernel_size=2, padding="same", strides=2))
+model.add(BatchNormalization())
 # For B7 you need to add a valid here instead of a same to reduce the size and finally get 600*600
 # model.add(Conv2D(filters=256, padding="valid", kernel_size=3, activation="relu"))
 model.add(Conv2D(filters=256, padding="same", kernel_size=3, activation="relu"))
@@ -85,10 +88,12 @@ model.add(Conv2D(filters=256, padding="same", kernel_size=3, activation="relu"))
 model.add(Conv2D(filters=256, padding="same", kernel_size=3, activation="relu"))
 # Fourth block (pool->conv->conv)
 model.add(Conv2DTranspose(filters=128, kernel_size=2, padding="same", strides=2))
+model.add(BatchNormalization())
 model.add(Conv2D(filters=128, padding="same", kernel_size=3, activation="relu"))
 model.add(Conv2D(filters=128, padding="same", kernel_size=3, activation="relu"))
 # Fifth block (pool->conv->conv)
 model.add(Conv2DTranspose(filters=64, kernel_size=2, padding="same", strides=2))
+model.add(BatchNormalization())
 model.add(Conv2D(filters=64, padding="same", kernel_size=3, activation="relu"))
 model.add(Conv2D(filters=64, padding="same", kernel_size=3, activation="relu"))
 # Output (conv)
