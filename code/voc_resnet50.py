@@ -80,7 +80,7 @@ base_model = applications.resnet50.ResNet50(weights='imagenet', include_top=Fals
 
 model = Sequential()
 model.add(base_model)
-model.add(Dropout())
+model.add(Dropout(rate=0.5))
 model.add(BatchNormalization())
 model.add(GlobalAveragePooling2D())
 model.add(Dense(num_classes, activation='sigmoid'))
