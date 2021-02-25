@@ -4,7 +4,7 @@ from PIL import Image
 import os
 import importdataset
 from keras import applications, Input
-from keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPool2D, GlobalAveragePooling2D, AveragePooling2D, Flatten, BatchNormalization
+from keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPool2D, GlobalAveragePooling2D, AveragePooling2D, Flatten, BatchNormalization, SpatialDropout2D
 from keras.models import Sequential, Model, load_model
 from keras.optimizers import SGD, Adam
 from tensorflow.keras.losses import MeanSquaredError, BinaryCrossentropy
@@ -81,7 +81,7 @@ base_model = applications.resnet50.ResNet50(weights='imagenet', include_top=Fals
 model = Sequential()
 model.add(base_model)
 # With these two achieved 0.20 crossentropy on valid set -------
-model.add(Dropout(rate=0.5))
+model.add(SpatialDropout2D(rate=0.5))
 model.add(BatchNormalization())
 # --------------------------------------------------------------
 model.add(GlobalAveragePooling2D())
