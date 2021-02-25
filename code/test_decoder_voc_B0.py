@@ -108,6 +108,7 @@ basepath = os.getcwd()
 decoder_path = os.path.join(basepath, "../models/decoder_voc_B0")
 decoder_dataset_path = os.path.join(basepath, "../datasets/dataset_encoder_voc_B0.h5")
 voc_dataset_path = os.path.join(basepath, "../datasets/dataset.h5")
+imagenet_dataset_path = os.path.join(basepath, "../datasets/dataset_encoder_imagenet_rescaled_5k.h5")
 classes_file = open(os.path.join(basepath, "../datasets/imagenet_classes.txt"))
 imagenet_classes = classes_file.readlines()
 
@@ -129,17 +130,17 @@ decoder.summary()
 classifier.summary()
 
 # Load targets (The targets for the decoder are the original inputs, X in main dataset)
-with h5py.File(decoder_dataset_path, 'r') as hf, h5py.File(voc_dataset_path, 'r') as voc:
-    X_train = voc.get('X_Test').value  # when using decoder dataset voc b0 or 'X_Test'
-    # X_train = hf.get('X_train').value  # when using decoder dataset imagenet
-    # E_train = hf.get('E_train').value
+with h5py.File(decoder_dataset_path, 'r') as hf, h5py.File(voc_dataset_path, 'r') as voc, h5py.File(imagenet_dataset_path, 'r') as imn:
+    # X_train = voc.get('X_Test').value  # when using decoder dataset voc b0 'X_Train' or 'X_Test'
+    X_train = imn.get('X_train').value  # when using decoder dataset imagenet
+    # E_train = hf.get('E_train').valueh
 
 root = tkinter.Tk()
 root.geometry('1000x1000')
 canvas = tkinter.Canvas(root, width=999, height=999)
 canvas.pack()
 
-for i in range(20, 40):
+for i in range(40, 250):
     encoding = encoder.predict(X_train[i:i+1, :, :]*255)
     print("Encoding")
     print(encoding.shape)
