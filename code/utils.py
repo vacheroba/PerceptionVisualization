@@ -22,9 +22,9 @@ def squared_means_loss(y_true, y_pred):
 def rgb_ssim_loss(y_true, y_pred):
     # return K.sum(K.square(y_pred - y_true), axis=(1, 2, 3))
     # return SSIM_GAMMA*(tf.image.ssim(y_pred, y_true, max_val=1.0))
-    return -(tf.image.ssim(y_pred[:, :, :, 0:1], y_true[:, :, :, 0:1], max_val=1.0) +
-             tf.image.ssim(y_pred[:, :, :, 1:2], y_true[:, :, :, 1:2], max_val=1.0) +
-             tf.image.ssim(y_pred[:, :, :, 2:3], y_true[:, :, :, 2:3], max_val=1.0))
+    return - SSIM_GAMMA**2 * tf.reduce_mean(tf.image.ssim(y_pred[:, :, :, 0:1], y_true[:, :, :, 0:1], max_val=1.0) +
+                                            tf.image.ssim(y_pred[:, :, :, 1:2], y_true[:, :, :, 1:2], max_val=1.0) +
+                                            tf.image.ssim(y_pred[:, :, :, 2:3], y_true[:, :, :, 2:3], max_val=1.0))
 
 if __name__ == "__main__":
     import numpy as np
@@ -40,3 +40,12 @@ if __name__ == "__main__":
     im2 = hf["X_train"][2:3, :, :, :]
     im2 = np.repeat(im2, 10, axis=0)
     print(np.array(rgb_ssim_loss(im1, im2)))
+    im1 = tf.convert_to_tensor(im1)
+    im2 = tf.convert_to_tensor(im2)
+    y2 = tf.constant(3.0)
+    with tf.GradientTape() as g:
+        g.watch(y2)
+        g.watch(im1)
+        g.watch(im2)
+        y2 = rgb_ssim_loss(im1, im2)
+    print(g.gradient(y2, im1))
