@@ -28,7 +28,7 @@ encoder_dataset_path = os.path.join(basepath, "../datasets/dataset_encoder_voc_B
 voc_dataset_path = os.path.join(basepath, "../datasets/dataset.h5")
 
 BATCH_SIZE = 64  # 16 for my pc
-NUM_EPOCHS = 100
+NUM_EPOCHS = 500
 
 with h5py.File(encoder_dataset_path, 'r') as hf, h5py.File(voc_dataset_path, 'r') as voc:
     NUM_IMAGES = hf["E_train"].shape[0]
@@ -121,8 +121,9 @@ model.compile(optimizer=keras.optimizers.Adam(),
 #    model.fit(ds_counter, epochs=10, batch_size=BATCH_SIZE, steps_per_epoch=math.floor(NUM_IMAGES/BATCH_SIZE))
 #    gc.collect()
 
+callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True)
 
-model.fit(ds_counter, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, steps_per_epoch=math.floor(NUM_IMAGES/BATCH_SIZE))
+model.fit(ds_counter, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, steps_per_epoch=math.floor(NUM_IMAGES/BATCH_SIZE), validation_split=0.15, callbacks=[callback])
 
 modelpath = os.path.join(basepath, "../models/decoder_voc_B0")
 model.save(modelpath)
