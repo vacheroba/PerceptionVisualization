@@ -111,7 +111,7 @@ hf = h5py.File(encoder_dataset_path, 'r')
 
 # optimizer=tf.keras.optimizers.SGD(learning_rate=0.01, momentum=0.09, nesterov=True)
 model.compile(optimizer='adam',
-              loss="binary_crossentropy",
+              loss=utils.euclidean_distance_loss, # "binary_crossentropy",
               metrics=[losses.binary_crossentropy, utils.euclidean_distance_loss])
 
 # with h5py.File(encoder_dataset_path, 'r') as hf, h5py.File(voc_dataset_path, 'r') as voc:
