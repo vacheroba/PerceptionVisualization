@@ -4,7 +4,7 @@ from PIL import Image
 import os
 import importdataset
 from keras import applications, Input
-from keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPool2D, GlobalAveragePooling2D, AveragePooling2D, Flatten
+from keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPool2D, GlobalAveragePooling2D, AveragePooling2D, Flatten, BatchNormalization
 from keras.models import Sequential, Model, load_model
 from keras.optimizers import SGD, Adam
 from tensorflow.keras.losses import MeanSquaredError, BinaryCrossentropy
@@ -51,7 +51,7 @@ def generator():
 # For tensorflow 2.3
 ds_counter = tf.data.Dataset.from_generator(generator, (tf.float32, tf.float32), (tf.TensorShape([BATCH_SIZE, 224, 224, 3]), tf.TensorShape([BATCH_SIZE, 20])))
 
-ds_counter = ds_counter.shuffle(10, reshuffle_each_iteration=True)
+ds_counter = ds_counter.shuffle(math.floor(NUM_IMAGES/BATCH_SIZE), reshuffle_each_iteration=True)
 ds_counter = ds_counter.repeat(NUM_EPOCHS)
 
 class_names = importdataset.CLASS_NAMES
@@ -80,6 +80,8 @@ base_model = applications.resnet50.ResNet50(weights='imagenet', include_top=Fals
 
 model = Sequential()
 model.add(base_model)
+model.add(Dropout())
+model.add(BatchNormalization())
 model.add(GlobalAveragePooling2D())
 model.add(Dense(num_classes, activation='sigmoid'))
 
@@ -87,7 +89,7 @@ model.compile(optimizer='adam',
               loss=binary_crossentropy,  # bp_mll_loss,
               metrics=[bp_mll_loss, utils.euclidean_distance_loss])
 
-callback = tf.keras.callbacks.EarlyStopping(monitor='val_binary_crossentropy', patience=5, restore_best_weights=True)
+callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
 model.fit(ds_counter, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, steps_per_epoch=math.floor(NUM_IMAGES/BATCH_SIZE), callbacks=[callback], validation_data=(X_test, Y_test))
 
 basepath = os.getcwd()
