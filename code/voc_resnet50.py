@@ -16,6 +16,7 @@ import utils
 import tensorflow as tf
 import h5py
 import math
+from keras.losses import binary_crossentropy
 
 basepath = os.getcwd()
 voc_dataset_path = os.path.join(basepath, "../datasets/dataset.h5")
@@ -56,8 +57,8 @@ ds_counter = ds_counter.repeat(NUM_EPOCHS)
 class_names = importdataset.CLASS_NAMES
 
 with h5py.File(voc_dataset_path, 'r') as voc:
-    X_test = tf.convert_to_tensor(voc["X_Test"][:, :, :, :], dtype=tf.float32)
-    Y_test = tf.convert_to_tensor(voc["Y_Test"][:, :], dtype=tf.float32)
+    X_test = voc.get('X_Test').value
+    Y_test = voc.get('Y_Test').value
 
 img_height, img_width = 224, 224
 num_classes = 20
@@ -83,10 +84,10 @@ model.add(GlobalAveragePooling2D())
 model.add(Dense(num_classes, activation='sigmoid'))
 
 model.compile(optimizer='adam',
-              loss=bp_mll_loss,
+              loss=binary_crossentropy,  # bp_mll_loss,
               metrics=[bp_mll_loss, utils.euclidean_distance_loss])
 
-callback = tf.keras.callbacks.EarlyStopping(monitor='val_bp_mll_loss', patience=3, restore_best_weights=True)
+callback = tf.keras.callbacks.EarlyStopping(monitor='val_binary_crossentropy', patience=5, restore_best_weights=True)
 model.fit(ds_counter, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, steps_per_epoch=math.floor(NUM_IMAGES/BATCH_SIZE), callbacks=[callback], validation_data=(X_test, Y_test))
 
 basepath = os.getcwd()
@@ -98,7 +99,7 @@ print("Loss = " + str(preds[0]))
 print("Test Accuracy = " + str(preds[1]))
 
 for i in range(0, 20):
-    y = model.predict(X_test[i, :, :, :].reshape([1, 224, 224, 3]))
+    y = np.array(model.predict(X_test[i, :, :, :])).reshape([1, 224, 224, 3])
     print(y)
     print(Y_test[i, :].reshape([1, 20]))
     print("\n")
