@@ -46,17 +46,9 @@ for h in physical_devices:
     tf.config.experimental.set_memory_growth(h, True)
 
 
-
-def train_generator():
+def generator():
     with h5py.File(encoder_dataset_path, 'r') as hf, h5py.File(voc_dataset_path, 'r') as voc:
-        for i in range(0, NUM_IMAGES-math.floor(BATCH_SIZE*(NUM_IMAGES*VALID_SPLIT))-BATCH_SIZE, BATCH_SIZE):
-            # yield tf.convert_to_tensor(hf["E_train"][i:i + BATCH_SIZE, :, :, :], dtype=tf.float32), tf.convert_to_tensor(hf["X_train"][i:i + BATCH_SIZE, :, :, :], dtype=tf.float32)
-            yield tf.convert_to_tensor(hf["E_train"][i:i + BATCH_SIZE, :, :, :], dtype=tf.float32), tf.convert_to_tensor(voc["X_Train"][i:i + BATCH_SIZE, :, :, :], dtype=tf.float32)
-
-
-def valid_generator():
-    with h5py.File(encoder_dataset_path, 'r') as hf, h5py.File(voc_dataset_path, 'r') as voc:
-        for i in range(NUM_IMAGES-math.floor(BATCH_SIZE*(NUM_IMAGES*VALID_SPLIT))-BATCH_SIZE, NUM_IMAGES-BATCH_SIZE, BATCH_SIZE):
+        for i in range(0, NUM_IMAGES-BATCH_SIZE, BATCH_SIZE):
             # yield tf.convert_to_tensor(hf["E_train"][i:i + BATCH_SIZE, :, :, :], dtype=tf.float32), tf.convert_to_tensor(hf["X_train"][i:i + BATCH_SIZE, :, :, :], dtype=tf.float32)
             yield tf.convert_to_tensor(hf["E_train"][i:i + BATCH_SIZE, :, :, :], dtype=tf.float32), tf.convert_to_tensor(voc["X_Train"][i:i + BATCH_SIZE, :, :, :], dtype=tf.float32)
 
@@ -67,14 +59,10 @@ def valid_generator():
 #         tf.TensorSpec(shape=(BATCH_SIZE, 224, 224, 3), dtype=tf.float32)))
 
 # For tensorflow 2.3
-ds_train = tf.data.Dataset.from_generator(train_generator, (tf.float32, tf.float32), (tf.TensorShape([BATCH_SIZE, 7, 7, 1280]), tf.TensorShape([BATCH_SIZE, 224, 224, 3])))
-ds_train = ds_train.shuffle(10, reshuffle_each_iteration=True)
-ds_train = ds_train.repeat(NUM_EPOCHS)
+ds_counter = tf.data.Dataset.from_generator(generator, (tf.float32, tf.float32), (tf.TensorShape([BATCH_SIZE, 7, 7, 1280]), tf.TensorShape([BATCH_SIZE, 224, 224, 3])))
 
-with h5py.File(encoder_dataset_path, 'r') as hf, h5py.File(voc_dataset_path, 'r') as voc:
-    start = NUM_IMAGES-math.floor(BATCH_SIZE*(NUM_IMAGES*VALID_SPLIT))-BATCH_SIZE
-    end = NUM_IMAGES
-    ds_valid = tuple((hf["E_train"][start:end + BATCH_SIZE, :, :, :],voc["X_Train"][start:end + BATCH_SIZE, :, :, :]))
+ds_counter = ds_counter.shuffle(10, reshuffle_each_iteration=True)
+ds_counter = ds_counter.repeat(NUM_EPOCHS)
 
 # Build a reversed VGG16 for decoding
 model = Sequential()
@@ -134,9 +122,9 @@ model.compile(optimizer=keras.optimizers.Adam(),
 #    model.fit(ds_counter, epochs=10, batch_size=BATCH_SIZE, steps_per_epoch=math.floor(NUM_IMAGES/BATCH_SIZE))
 #    gc.collect()
 
-callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True)
+callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=3, restore_best_weights=True)
 
-model.fit(ds_train, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, steps_per_epoch=math.floor(NUM_IMAGES/BATCH_SIZE), validation_data=ds_valid, callbacks=[callback])
+model.fit(ds_counter, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, steps_per_epoch=math.floor(NUM_IMAGES/BATCH_SIZE), callbacks=[callback])
 
 modelpath = os.path.join(basepath, "../models/decoder_voc_B0")
 model.save(modelpath)
