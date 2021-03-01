@@ -57,7 +57,7 @@ root.geometry('1000x1000')
 canvas = tkinter.Canvas(root, width=999, height=999)
 canvas.pack()
 
-for i in range(20, 40):
+for i in range(40, 250):
     reconstructed = ((decoder.predict(E_test[i:i+1, :, :, :]))*255).squeeze().astype(np.uint8)
     original = (X_test[i:i+1, :, :, :]*255).squeeze().astype(np.uint8)
     res = np.concatenate((original, reconstructed), axis=1)

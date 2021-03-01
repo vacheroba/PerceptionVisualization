@@ -41,6 +41,10 @@ hf = h5py.File(main_dataset_path, 'r')
 X_test = hf['X_Test']
 Y_test = hf['Y_Test']
 
+preds = classifier.evaluate(X_test, Y_test)
+print("Loss = " + str(preds[0]))
+print("Test Accuracy = " + str(preds[1]))
+
 for i in range(0, 20):
     print("\n\n")
     sample = X_test[i:i+1, :, :, :]
