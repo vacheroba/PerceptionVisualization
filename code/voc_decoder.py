@@ -106,7 +106,7 @@ model.compile(optimizer='adam',
               loss=utils.euclidean_distance_loss,  # "binary_crossentropy",
               metrics=[losses.binary_crossentropy, utils.euclidean_distance_loss])
 
-callback = tf.keras.callbacks.EarlyStopping(monitor='val_euclidean_distance_loss', patience=5, restore_best_weights=True)
+callback = tf.keras.callbacks.EarlyStopping(monitor='val_euclidean_distance_loss', patience=20, restore_best_weights=True)
 model.fit(ds_counter, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, steps_per_epoch=math.floor(NUM_IMAGES/BATCH_SIZE), callbacks=[callback], validation_data=(E_test, Y_test))
 
 
