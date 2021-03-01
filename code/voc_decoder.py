@@ -66,7 +66,7 @@ main_dataset_path = os.path.join(basepath, "../datasets/dataset.h5")
 encoder_dataset_path = os.path.join(basepath, "../datasets/dataset_encoder.h5")
 
 BATCH_SIZE = 64  # 16 for my pc
-NUM_EPOCHS = 500
+NUM_EPOCHS = 200
 VALID_SPLIT = 0.15
 
 with h5py.File(encoder_dataset_path, 'r') as enc:
@@ -107,8 +107,8 @@ model.compile(optimizer='adam',
               metrics=[losses.binary_crossentropy, utils.euclidean_distance_loss])
 
 callback = tf.keras.callbacks.EarlyStopping(monitor='val_euclidean_distance_loss', patience=200, restore_best_weights=True)
-model.fit(ds_counter, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, steps_per_epoch=math.floor(NUM_IMAGES/BATCH_SIZE), callbacks=[callback], validation_data=(E_test, Y_test))
-
+# model.fit(ds_counter, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, steps_per_epoch=math.floor(NUM_IMAGES/BATCH_SIZE), callbacks=[callback], validation_data=(E_test, Y_test))
+model.fit(ds_counter, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, steps_per_epoch=math.floor(NUM_IMAGES/BATCH_SIZE))
 
 modelpath = os.path.join(basepath, "../models/decoder")
 model.save(modelpath)
