@@ -5,7 +5,7 @@ import os
 import importdataset
 from keras import applications, Input
 from keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPool2D
-from keras.layers import GlobalAveragePooling2D, AveragePooling2D, Flatten, Conv2DTranspose, BatchNormalization
+from keras.layers import GlobalAveragePooling2D, AveragePooling2D, Flatten, Conv2DTranspose, BatchNormalization, SpatialDropout2D
 from keras.models import Sequential, Model, load_model
 from keras.optimizers import SGD, Adam
 from tensorflow.keras.losses import MeanSquaredError, BinaryCrossentropy
@@ -30,30 +30,30 @@ for h in physical_devices:
 model = Sequential()
 # First block (pool->conv->conv->conv)
 model.add(Conv2DTranspose(input_shape=(7, 7, 2048), filters=512, kernel_size=2, padding="same", strides=2))
-model.add(Dropout(rate=0.5))
+model.add(SpatialDropout2D(rate=0.5))
 model.add(Conv2D(filters=512, padding="same", kernel_size=3, activation="relu"))
 model.add(Conv2D(filters=512, padding="same", kernel_size=3, activation="relu"))
 model.add(Conv2D(filters=512, padding="same", kernel_size=3, activation="relu"))
 # Second block (pool->conv->conv->conv)
 model.add(Conv2DTranspose(filters=512, kernel_size=2, padding="same", strides=2))
-model.add(Dropout(rate=0.5))
+model.add(SpatialDropout2D(rate=0.5))
 model.add(Conv2D(filters=512, padding="same", kernel_size=3, activation="relu"))
 model.add(Conv2D(filters=512, padding="same", kernel_size=3, activation="relu"))
 model.add(Conv2D(filters=512, padding="same", kernel_size=3, activation="relu"))
 # Third block (pool->conv->conv->conv)
 model.add(Conv2DTranspose(filters=256, kernel_size=2, padding="same", strides=2))
-model.add(Dropout(rate=0.5))
+model.add(SpatialDropout2D(rate=0.5))
 model.add(Conv2D(filters=256, padding="same", kernel_size=3, activation="relu"))
 model.add(Conv2D(filters=256, padding="same", kernel_size=3, activation="relu"))
 model.add(Conv2D(filters=256, padding="same", kernel_size=3, activation="relu"))
 # Fourth block (pool->conv->conv)
 model.add(Conv2DTranspose(filters=128, kernel_size=2, padding="same", strides=2))
-model.add(Dropout(rate=0.5))
+model.add(SpatialDropout2D(rate=0.5))
 model.add(Conv2D(filters=128, padding="same", kernel_size=3, activation="relu"))
 model.add(Conv2D(filters=128, padding="same", kernel_size=3, activation="relu"))
 # Fifth block (pool->conv->conv)
 model.add(Conv2DTranspose(filters=64, kernel_size=2, padding="same", strides=2))
-model.add(Dropout(rate=0.5))
+model.add(SpatialDropout2D(rate=0.5))
 model.add(Conv2D(filters=64, padding="same", kernel_size=3, activation="relu"))
 model.add(Conv2D(filters=64, padding="same", kernel_size=3, activation="relu"))
 # Output (conv)
