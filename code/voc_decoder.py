@@ -113,7 +113,7 @@ model.fit(ds_counter, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, steps_per_epoch=
 modelpath = os.path.join(basepath, "../models/decoder")
 model.save(modelpath)
 
-preds = model.evaluate(X_test, Y_test)
+preds = model.evaluate(E_test, Y_test)
 print("Loss = " + str(preds[0]))
 print("Test Accuracy = " + str(preds[1]))
 
