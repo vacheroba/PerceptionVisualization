@@ -91,6 +91,8 @@ model.add(GlobalAveragePooling2D())
 # --------------------------------------------------------------
 model.add(Dense(num_classes, activation='sigmoid'))
 
+model.summary()
+
 model.compile(optimizer='adam',
               loss=binary_crossentropy,  # bp_mll_loss,
               metrics=[bp_mll_loss, utils.euclidean_distance_loss])
