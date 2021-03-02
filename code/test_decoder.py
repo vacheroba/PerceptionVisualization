@@ -57,7 +57,8 @@ root.geometry('1000x1000')
 canvas = tkinter.Canvas(root, width=999, height=999)
 canvas.pack()
 
-for i in range(40, 250):
+for i in range(0, 250):
+    infofile = open(os.path.join(basepath, "../images/info.txt"), 'w')
     reconstructed = ((decoder.predict(E_test[i:i+1, :, :, :]))*255).squeeze().astype(np.uint8)
     original = (X_test[i:i+1, :, :, :]*255).squeeze().astype(np.uint8)
     res = np.concatenate((original, reconstructed), axis=1)
@@ -66,13 +67,13 @@ for i in range(40, 250):
     target = Y_test[i, :]
 
     print("Targets")
-    accepted = []
+    correct = []
     count = 0
     for elem in importdataset.CLASS_NAMES:
         if target[count] > 0.1:
-            accepted.append((elem, target[count]))
+            correct.append((elem, target[count]))
         count += 1
-    print(accepted)
+    print(correct)
 
     print("Model prediction")
     classes = classifier.predict(X_test[i:i+1, :, :, :]).squeeze()
@@ -80,15 +81,23 @@ for i in range(40, 250):
     accepted = []
     count = 0
     for elem in importdataset.CLASS_NAMES:
-        if classes[count] > 0.1:
+        if classes[count] > 0.5:
             accepted.append((elem, classes[count]))
         count += 1
     image = Image.fromarray(res)
-    image = ImageTk.PhotoImage(image)
-    imagesprite = canvas.create_image(400, 400, image=image)
+    photoimage = ImageTk.PhotoImage(image)
+    imagesprite = canvas.create_image(400, 400, image=photoimage)
     root.update()
     print(accepted)
-    input("Any key to continue")
+    sv = input("Any key to continue")
+    if sv == "s":
+        image.save(os.path.join(basepath, "../images/"+str(i)+".jpg"))
+        infofile.writelines([str(correct)+";"+str(accepted)])
+        infofile.flush()
+    if sv == "q":
+        infofile.close()
+        exit()
+
 
 
 
