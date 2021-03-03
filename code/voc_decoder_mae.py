@@ -110,7 +110,7 @@ callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=10, restore
 # model.fit(ds_counter, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, steps_per_epoch=math.floor(NUM_IMAGES/BATCH_SIZE), callbacks=[callback], validation_data=(E_test, Y_test))
 model.fit(ds_counter, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, callbacks=[callback], steps_per_epoch=math.floor(NUM_IMAGES/BATCH_SIZE))
 
-modelpath = os.path.join(basepath, "../models/decoder")
+modelpath = os.path.join(basepath, "../models/decoder_mae")
 model.save(modelpath)
 
 preds = model.evaluate(E_test, Y_test)
