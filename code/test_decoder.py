@@ -24,6 +24,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import cv2
+import random
 
 def make_gradcam_heatmap(
     img_array, model, last_conv_layer_name, classifier_layer_names, class_index=-1
@@ -121,8 +122,18 @@ def make_gradcam_heatmap(
     # exit()
 
     superimposed_img = keras.preprocessing.image.array_to_img(superimposed_img)
+    # superimposed_img = keras.preprocessing.image.img_to_array(superimposed_img)
+    var = np.zeros([7, 7, 3])
+    var[:, :, 0] = heatmap
+    var[:, :, 1] = heatmap
+    var[:, :, 2] = heatmap
+    heatmap = var
+    heatmap = keras.preprocessing.image.array_to_img(heatmap)
+    heatmap = heatmap.resize((img.shape[1], img.shape[0]))
+    heatmap = keras.preprocessing.image.img_to_array(heatmap)
+    heatmap = heatmap.astype(np.float32) / 255.0
 
-    return superimposed_img
+    return superimposed_img, heatmap
 
 
 physical_devices = tf.config.list_physical_devices('GPU')
@@ -159,62 +170,124 @@ hf_enc = h5py.File(encoder_dataset_path, 'r')
 E_test = hf_enc['E_test']
 
 root = tkinter.Tk()
-root.geometry('900x250')
-canvas = tkinter.Canvas(root, width=896, height=224)
+root.geometry('900x800')
+canvas = tkinter.Canvas(root, width=896, height=800)
 canvas.pack()
 
-for i in range(0, 250):
-    infofile = open(os.path.join(basepath, "../images/info.txt"), 'w')
-    reconstructed = ((decoder.predict(E_test[i:i+1, :, :, :]))*255).squeeze().astype(np.uint8)
-    reconstructed_ssim = ((decoder_ssim.predict(E_test[i:i+1, :, :, :]))*255).squeeze().astype(np.uint8)
-    original = (X_test[i:i+1, :, :, :]*255).squeeze().astype(np.uint8)
-    heatmap = make_gradcam_heatmap(
-        X_test[i:i + 1, :, :, :], classifier, "conv5_block3_out", [], -1
-    )
-    res = np.concatenate((original, reconstructed, reconstructed_ssim, heatmap), axis=1)
+def viz_and_save():
+    # infofile = open(os.path.join(basepath, "../images/info.txt"), 'w')
+    for i in range(0, 250):
+        reconstructed = ((decoder.predict(E_test[i:i+1, :, :, :]))*255).squeeze().astype(np.uint8)
+        reconstructed_ssim = ((decoder_ssim.predict(E_test[i:i+1, :, :, :]))*255).squeeze().astype(np.uint8)
+        original = (X_test[i:i+1, :, :, :]*255).squeeze().astype(np.uint8)
+        heatmap, raw_heatmap = make_gradcam_heatmap(
+            X_test[i:i + 1, :, :, :], classifier, "conv5_block3_out", [], -1
+        )
 
-    print("\n\n")
-    target = Y_test[i, :]
+        heatmap = np.array(heatmap)
 
-    print("Targets")
-    correct = []
-    count = 0
-    for elem in importdataset.CLASS_NAMES:
-        if target[count] > 0.1:
-            correct.append((elem, target[count]))
-        count += 1
-    print(correct)
+        res = np.concatenate((original, reconstructed, reconstructed_ssim, heatmap), axis=1)
+        t = (heatmap.astype(np.float32)/255.0)*0.3
+        multi_map = np.concatenate((t, t, t, t), axis=1)
+        multi_map = multi_map + 0.7*(res.astype(np.float32)/255.0)
 
-    print("Model prediction")
-    classes = classifier.predict(X_test[i:i+1, :, :, :]).squeeze()
-    # print(classes)
-    accepted = []
-    count = 0
-    for elem in importdataset.CLASS_NAMES:
-        if classes[count] > 0.5:
-            accepted.append((elem, classes[count]))
-        count += 1
-    argmax = classes.argmax()
-    accepted.append(("TOP: "+importdataset.CLASS_NAMES[argmax], classes[argmax]))
-    image = Image.fromarray(res)
-    photoimage = ImageTk.PhotoImage(image)
-    imagesprite = canvas.create_image(0, 0, image=photoimage, anchor="nw")
-    root.update()
-    print(accepted)
-    sv = input("Any key to continue")
-    if sv == "s":
-        image.save(os.path.join(basepath, "../images/"+str(i)+".jpg"))
-        infofile.writelines([str(correct)+";"+str(accepted)])
-        infofile.flush()
-    if sv == "q":
-        infofile.close()
-        exit()
+        mask = np.concatenate((raw_heatmap, raw_heatmap, raw_heatmap, raw_heatmap), axis=1)  # This is the heatmap scaled 0...1
+        masked_map = (res.astype(np.float32)/255.0)  # This is a copy of the full row
+        white = np.ones([224, 224*4, 3])  # This is all ones, so a white image
+
+        masked_map = np.multiply(mask, masked_map) + np.multiply((white-mask), white)
+
+        multi_map_int = (multi_map*255.0).astype(np.uint8)
+        masked_map = (masked_map*255.0).astype(np.uint8)
+
+        res = np.concatenate((res, multi_map_int, masked_map), axis=0)
+
+        print("\n\n")
+        target = Y_test[i, :]
+
+        print("Targets")
+        correct = []
+        count = 0
+        for elem in importdataset.CLASS_NAMES:
+            if target[count] > 0.1:
+                correct.append((elem, target[count]))
+            count += 1
+        print(correct)
+
+        print("Model prediction")
+        classes = classifier.predict(X_test[i:i+1, :, :, :]).squeeze()
+        # print(classes)
+        accepted = []
+        count = 0
+        for elem in importdataset.CLASS_NAMES:
+            if classes[count] > 0.5:
+                accepted.append((elem, classes[count]))
+            count += 1
+        argmax = classes.argmax()
+        accepted.append(("TOP: "+importdataset.CLASS_NAMES[argmax], classes[argmax]))
+        image = Image.fromarray(res)
+        photoimage = ImageTk.PhotoImage(image)
+        imagesprite = canvas.create_image(0, 0, image=photoimage, anchor="nw")
+        root.update()
+        print(accepted)
+        sv = input("Any key to continue")
+        if sv == "s":
+            original = res[0:224, 0:224, :]
+            masked_original = res[448:, 0:224, :]
+            masked_recon = res[448:, 448:672, :]
+
+            original_cam = Image.fromarray(np.concatenate((original, masked_original), axis=1))
+            original_viz = Image.fromarray(np.concatenate((original, masked_recon), axis=1))
+            original = Image.fromarray(original)
+            masked_original = Image.fromarray(masked_original)
+            masked_recon = Image.fromarray(masked_recon)
+
+            original.save(os.path.join(basepath, "../images/original/"+str(i)+".jpg"))
+            masked_original.save(os.path.join(basepath, "../images/cam/"+str(i)+".jpg"))
+            masked_recon.save(os.path.join(basepath, "../images/viz/"+str(i)+".jpg"))
+            original_cam.save(os.path.join(basepath, "../images/original+cam/"+str(i)+".jpg"))
+            original_viz.save(os.path.join(basepath, "../images/original+viz/"+str(i)+".jpg"))
+            infofile.writelines([str(i)+"; "+str(correct)+"; "+str(accepted)+"\n"])
+        if sv == "q":
+            infofile.close()
+            exit()
+    infofile.close()
 
 
+def info_perm():
+    infofile = open(os.path.join(basepath, "../images/sorted/info.txt"), 'w')
+    rand_perm = np.array(
+        [38, 72, 12, 42, 65, 15, 0, 10, 45, 95, 58, 62, 3, 61, 90, 35, 18, 36, 107, 101, 13, 53, 21, 26, 9, 59, 41, 60,
+         93, 33])
+
+    for i in rand_perm:
+        output_set = set()
+
+        # Add the model's top prediction to the set
+        classes = classifier.predict(X_test[i:i + 1, :, :, :]).squeeze()
+        argmax = classes.argmax()
+        output_set.add(importdataset.CLASS_NAMES[argmax])
+
+        # Merge with actual labels until we fill the 4 cases
+        count = 0
+        target = Y_test[i, :]
+        for elem in importdataset.CLASS_NAMES:
+            if target[count] > 0.1 and len(output_set) < 4:
+                output_set.add(elem)
+            count += 1
+
+        # Add random options if we haven't reached the 4 mark yet
+        while len(output_set) < 4:
+            ran = random.randrange(0, len(importdataset.CLASS_NAMES))
+            output_set.add(importdataset.CLASS_NAMES[ran])
+
+        infofile.writelines(str(output_set)+"\n")
+
+    infofile.close()
 
 
-
-
+if __name__ == "__main__":
+    viz_and_save()
 
 
 

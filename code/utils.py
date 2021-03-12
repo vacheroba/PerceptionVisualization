@@ -1,7 +1,11 @@
 import keras.backend as K
 import tensorflow as tf
+import keras.layers as layers
+import keras.losses as losses
 
 SSIM_GAMMA = 11000.0
+
+cross_entropy = tf.keras.losses.BinaryCrossentropy()
 
 
 def euclidean_distance_loss(y_true, y_pred):
@@ -25,6 +29,42 @@ def rgb_ssim_loss(y_true, y_pred):
     return - (tf.image.ssim(y_pred[:, :, :, 0:1], y_true[:, :, :, 0:1], max_val=1.0) +
               tf.image.ssim(y_pred[:, :, :, 1:2], y_true[:, :, :, 1:2], max_val=1.0) +
               tf.image.ssim(y_pred[:, :, :, 2:3], y_true[:, :, :, 2:3], max_val=1.0))
+
+
+def make_discriminator_model():
+    model = tf.keras.Sequential()
+    model.add(layers.Conv2D(64, 3, strides=2, padding='same', input_shape=[224, 224, 3]))
+    model.add(layers.Conv2D(64, 3, strides=2, padding='same', input_shape=[224, 224, 3]))
+    model.add(layers.LeakyReLU())
+    model.add(layers.Dropout(0.3))
+    model.add(layers.Conv2D(128, 3, strides=2, padding='same'))
+    model.add(layers.Conv2D(128, 3, strides=2, padding='same'))
+    model.add(layers.LeakyReLU())
+    model.add(layers.Dropout(0.3))
+    model.add(layers.Conv2D(256, 3, strides=2, padding='same'))
+    model.add(layers.Conv2D(256, 3, strides=2, padding='same'))
+    model.add(layers.LeakyReLU())
+    model.add(layers.Dropout(0.3))
+    model.add(layers.Conv2D(512, 3, strides=2, padding='same'))
+    model.add(layers.Conv2D(512, 3, strides=2, padding='same'))
+    model.add(layers.LeakyReLU())
+    model.add(layers.Dropout(0.3))
+    model.add(layers.GlobalAveragePooling2D())
+    model.add(layers.Dense(1, activation='sigmoid'))
+
+    return model
+
+
+def discriminator_loss(real_output, fake_output):
+    real_loss = cross_entropy(tf.ones_like(real_output), real_output)
+    fake_loss = cross_entropy(tf.zeros_like(fake_output), fake_output)
+    total_loss = real_loss + fake_loss
+    return total_loss
+
+
+def generator_loss(fake_output):
+    return cross_entropy(tf.ones_like(fake_output), fake_output)
+
 
 if __name__ == "__main__":
     import numpy as np
