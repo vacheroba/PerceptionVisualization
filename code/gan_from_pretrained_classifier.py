@@ -136,7 +136,8 @@ for epoch in range(EPOCHS):
     print("Reconstruction loss " + str(dec_loss))
     print("Discriminator loss " + str(disc_loss))
 
-
+decoder.save(os.path.join(basepath, "../models/decoder_gan"))
+discriminator.save(os.path.join(basepath, "../models/discriminator_gan"))
 
 
 
