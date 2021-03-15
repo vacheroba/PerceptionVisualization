@@ -22,7 +22,7 @@ import random
 import math
 
 BATCH_SIZE = 64
-BUFFER_SIZE = 100
+BUFFER_SIZE = 10
 EPOCHS = 200
 
 physical_devices = tf.config.list_physical_devices('GPU')
@@ -73,10 +73,6 @@ def generator():
 
             yield tf.convert_to_tensor(real_images, dtype=tf.float32), tf.convert_to_tensor(fake_images, dtype=tf.float32), tf.convert_to_tensor(embeddings, dtype=tf.float32)
 
-
-ds_counter = tf.data.Dataset.from_generator(generator, (tf.float32, tf.float32, tf.float32), (tf.TensorShape([math.floor(BATCH_SIZE/2), 224, 224, 3]), tf.TensorShape([math.floor(BATCH_SIZE/2), 224, 224, 3]), tf.TensorShape([math.floor(BATCH_SIZE/2), 7, 7, 2048])))
-ds_counter = ds_counter.shuffle(BUFFER_SIZE).batch(1)
-
 # Load targets (The targets for the decoder are the original inputs, X in main dataset)
 hf = h5py.File(main_dataset_path, 'r')
 Y_test = hf.get('X_Test').value
@@ -118,6 +114,12 @@ def train_step(batch):
 
 
 for epoch in range(EPOCHS):
+    ds_counter = tf.data.Dataset.from_generator(generator, (tf.float32, tf.float32, tf.float32), (
+                                                tf.TensorShape([math.floor(BATCH_SIZE / 2), 224, 224, 3]),
+                                                tf.TensorShape([math.floor(BATCH_SIZE / 2), 224, 224, 3]),
+                                                tf.TensorShape([math.floor(BATCH_SIZE / 2), 7, 7, 2048])))
+    ds_counter = ds_counter.shuffle(BUFFER_SIZE).batch(1)
+
     print("EPOCH "+str(epoch)+"/"+str(EPOCHS))
     step_counter = 0
     for image_batch in ds_counter:
