@@ -55,6 +55,42 @@ def make_discriminator_model():
     return model
 
 
+def make_decoder_model():
+    model = tf.keras.Sequential()
+    # First block (pool->conv->conv->conv)
+    model.add(layers.Conv2DTranspose(input_shape=(7, 7, 2048), filters=512, kernel_size=2, padding="same", strides=2))
+    model.add(layers.BatchNormalization())
+    model.add(layers.Conv2D(filters=512, padding="same", kernel_size=3, activation="relu"))
+    model.add(layers.Conv2D(filters=512, padding="same", kernel_size=3, activation="relu"))
+    model.add(layers.Conv2D(filters=512, padding="same", kernel_size=3, activation="relu"))
+    # Second block (pool->conv->conv->conv)
+    model.add(layers.Conv2DTranspose(filters=512, kernel_size=2, padding="same", strides=2))
+    model.add(layers.BatchNormalization())
+    model.add(layers.Conv2D(filters=512, padding="same", kernel_size=3, activation="relu"))
+    model.add(layers.Conv2D(filters=512, padding="same", kernel_size=3, activation="relu"))
+    model.add(layers.Conv2D(filters=512, padding="same", kernel_size=3, activation="relu"))
+    # Third block (pool->conv->conv->conv)
+    model.add(layers.Conv2DTranspose(filters=256, kernel_size=2, padding="same", strides=2))
+    model.add(layers.BatchNormalization())
+    model.add(layers.Conv2D(filters=256, padding="same", kernel_size=3, activation="relu"))
+    model.add(layers.Conv2D(filters=256, padding="same", kernel_size=3, activation="relu"))
+    model.add(layers.Conv2D(filters=256, padding="same", kernel_size=3, activation="relu"))
+    # Fourth block (pool->conv->conv)
+    model.add(layers.Conv2DTranspose(filters=128, kernel_size=2, padding="same", strides=2))
+    model.add(layers.BatchNormalization())
+    model.add(layers.Conv2D(filters=128, padding="same", kernel_size=3, activation="relu"))
+    model.add(layers.Conv2D(filters=128, padding="same", kernel_size=3, activation="relu"))
+    # Fifth block (pool->conv->conv)
+    model.add(layers.Conv2DTranspose(filters=64, kernel_size=2, padding="same", strides=2))
+    model.add(layers.BatchNormalization())
+    model.add(layers.Conv2D(filters=64, padding="same", kernel_size=3, activation="relu"))
+    model.add(layers.Conv2D(filters=64, padding="same", kernel_size=3, activation="relu"))
+    # Output (conv)
+    model.add(layers.Conv2D(filters=3, padding="same", kernel_size=3, activation="sigmoid"))
+
+    return model
+
+
 def discriminator_loss(real_output, fake_output):
     real_loss = cross_entropy(tf.ones_like(real_output), real_output)
     fake_loss = cross_entropy(tf.zeros_like(fake_output), fake_output)
