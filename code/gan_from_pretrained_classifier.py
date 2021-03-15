@@ -21,7 +21,7 @@ import tensorflow as tf
 import random
 import math
 
-BATCH_SIZE = 8
+BATCH_SIZE = 64
 BUFFER_SIZE = 100
 EPOCHS = 200
 
@@ -126,11 +126,11 @@ for epoch in range(EPOCHS):
         step_counter += 1
     print("\n")
 
-    generated_test_images = decoder(E_test, training=False)
-    real_test_output = discriminator(Y_test, training=False)
+    generated_test_images = decoder(E_test[0:100, :, :, :], training=False)
+    real_test_output = discriminator(Y_test[0:100, :, :, :], training=False)
     fake_test_output = discriminator(generated_test_images, training=False)
 
-    dec_loss = utils.euclidean_distance_loss(generated_test_images, Y_test)
+    dec_loss = utils.euclidean_distance_loss(generated_test_images, Y_test[0:100, :, :, :])
     disc_loss = utils.discriminator_loss(real_test_output, fake_test_output)
 
     print("Reconstruction loss " + str(dec_loss))
