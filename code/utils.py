@@ -9,7 +9,7 @@ cross_entropy = tf.keras.losses.BinaryCrossentropy()
 
 
 def euclidean_distance_loss(y_true, y_pred):
-    return K.sum(K.square(y_pred - y_true), axis=-1)
+    return K.sum(K.square(y_pred - y_true), axis=(1, 2, 3))  # axis = -1
 
 
 def euclidean_ssim_loss(y_true, y_pred):
