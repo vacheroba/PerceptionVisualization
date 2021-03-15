@@ -85,10 +85,16 @@ hf.close()
 
 decoder = keras.models.load_model(decoderpath, custom_objects={"bp_mll_loss": bp_mll_loss, "euclidean_distance_loss": utils.euclidean_distance_loss})
 classifier = keras.models.load_model(classifierpath, custom_objects={"bp_mll_loss": bp_mll_loss, "euclidean_distance_loss": utils.euclidean_distance_loss})
+encoder = keras.Model(classifier.input, classifier.get_layer("global_average_pooling2d").input)
 discriminator = utils.make_discriminator_model()
 
 decoder_optimizer = tf.keras.optimizers.Adam(1e-4)
 discriminator_optimizer = tf.keras.optimizers.Adam(learning_rate=1e-4, beta_1=0.5)
+
+
+def deep_sim_loss(images, y_pred):
+    y_true = encoder(images, training=False)
+    return K.sum(K.square(y_pred - y_true), axis=(1, 2, 3))
 
 
 @tf.function
@@ -103,7 +109,7 @@ def train_step(batch):
         real_output = discriminator(real_images, training=True)
         fake_output = discriminator(generated_images, training=True)
 
-        dec_loss = utils.generator_loss(fake_output) + utils.euclidean_distance_loss(fake_images, generated_images)
+        dec_loss = utils.generator_loss(fake_output) + utils.euclidean_distance_loss(fake_images, generated_images) + deep_sim_loss(generated_images, fake_embeddings)
         disc_loss = utils.discriminator_loss(real_output, fake_output)
 
     gradients_of_decoder = gen_tape.gradient(dec_loss, decoder.trainable_variables)
