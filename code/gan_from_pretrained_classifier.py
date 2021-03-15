@@ -90,7 +90,7 @@ encoder = keras.Model(classifier.input, classifier.get_layer("global_average_poo
 discriminator = utils.make_discriminator_model()
 
 decoder_optimizer = tf.keras.optimizers.Adam(1e-4)
-discriminator_optimizer = tf.keras.optimizers.Adam(learning_rate=1e-4, beta_1=0.5)
+discriminator_optimizer = tf.keras.optimizers.Adam(learning_rate=(2*1e-5), beta_1=0.5)
 
 
 def deep_sim_loss(images, y_pred):
@@ -117,7 +117,10 @@ def train_step(batch):
     gradients_of_discriminator = disc_tape.gradient(disc_loss, discriminator.trainable_variables)
 
     decoder_optimizer.apply_gradients(zip(gradients_of_decoder, decoder.trainable_variables))
-    discriminator_optimizer.apply_gradients(zip(gradients_of_discriminator, discriminator.trainable_variables))
+
+    # Train discriminator only if its loss is greater than value
+    if tf.math.greater(disc_loss, tf.constant(0.35)):
+        discriminator_optimizer.apply_gradients(zip(gradients_of_discriminator, discriminator.trainable_variables))
 
 
 for epoch in range(EPOCHS):
