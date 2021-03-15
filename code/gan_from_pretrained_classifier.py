@@ -110,13 +110,8 @@ def train_step(batch):
         real_output = discriminator(real_images, training=True)
         fake_output = discriminator(generated_images, training=True)
 
-        dec_loss = utils.generator_loss(fake_output) + tf.constant(1e-5)*utils.euclidean_distance_loss(fake_images, generated_images) + tf.constant(1e-6)*deep_sim_loss(generated_images, fake_embeddings)
+        dec_loss = utils.generator_loss(fake_output) + tf.constant(1.0/150528.0)*tf.norm(utils.euclidean_distance_loss(fake_images, generated_images)) + tf.constant(1.0/100352.0)*tf.norm(deep_sim_loss(generated_images, fake_embeddings))
         disc_loss = utils.discriminator_loss(real_output, fake_output)
-
-        tf.print(tf.norm(utils.generator_loss(fake_output)))
-        tf.print(tf.norm(utils.euclidean_distance_loss(fake_images, generated_images)))
-        tf.print(tf.norm(deep_sim_loss(generated_images, fake_embeddings)))
-        tf.print("aaa")
 
     gradients_of_decoder = gen_tape.gradient(dec_loss, decoder.trainable_variables)
     gradients_of_discriminator = disc_tape.gradient(disc_loss, discriminator.trainable_variables)
