@@ -142,7 +142,7 @@ for epoch in range(EPOCHS):
     real_test_output = discriminator(Y_test[0:100, :, :, :], training=False)
     fake_test_output = discriminator(generated_test_images, training=False)
 
-    dec_loss = utils.euclidean_distance_loss(generated_test_images, Y_test[0:100, :, :, :])
+    dec_loss = np.mean(utils.euclidean_distance_loss(generated_test_images, Y_test[0:100, :, :, :]))
     disc_loss = utils.discriminator_loss(real_test_output, fake_test_output)
 
     print("Reconstruction loss " + str(dec_loss))
