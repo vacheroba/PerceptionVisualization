@@ -89,8 +89,8 @@ classifier = keras.models.load_model(classifierpath, custom_objects={"bp_mll_los
 encoder = keras.Model(classifier.input, classifier.get_layer("global_average_pooling2d").input)
 discriminator = utils.make_discriminator_model()
 
-decoder_optimizer = tf.keras.optimizers.Adam(1e-2)
-discriminator_optimizer = tf.keras.optimizers.Adam(learning_rate=(2*1e-3), beta_1=0.5)
+decoder_optimizer = tf.keras.optimizers.Adam(1e-3)
+discriminator_optimizer = tf.keras.optimizers.Adam(learning_rate=(2*1e-4), beta_1=0.5)
 
 
 def deep_sim_loss(images, y_pred):
@@ -119,8 +119,8 @@ def train_step(batch):
     decoder_optimizer.apply_gradients(zip(gradients_of_decoder, decoder.trainable_variables))
 
     # Train discriminator only if its loss is greater than value (previously 0.35)
-    if tf.math.greater(disc_loss, tf.constant(0.1)):
-        discriminator_optimizer.apply_gradients(zip(gradients_of_discriminator, discriminator.trainable_variables))
+    # if tf.math.greater(disc_loss, tf.constant(0.1)):
+    discriminator_optimizer.apply_gradients(zip(gradients_of_discriminator, discriminator.trainable_variables))
 
 
 for epoch in range(EPOCHS):
