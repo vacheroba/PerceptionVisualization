@@ -20,10 +20,39 @@ import h5py
 import tensorflow as tf
 import random
 import math
+import wandb
+
+# ----------------------------------------------------------------------------------------------------------WANDB PARAMS
+wandb.init(project='PerceptionVisualization', entity='loris2222')
+wandbconfig = wandb.config
 
 BATCH_SIZE = 64
 BUFFER_SIZE = 10
 EPOCHS = 200
+
+LEARN_RATE_DEC = 1e-4
+LEARN_RATE_DISC = 2*1e-5
+BETA1_DISC = 0.5
+
+START_PRETRAINED = False
+
+WEIGHT_GAN_LOSS = 10.0
+WEIGHT_REC_LOSS = 1.0/150528.0
+WEIGHT_DSIM_LOSS = 1.0/100352.0
+
+TRAIN_DISC_LOWER_THRESH = 0.1
+TRAIN_DEC_UPPER_THRESH = 0.7
+
+DISC_MODEL = "(conv stride 2>conv stride 1>batchnorm)*5>globAvPool>sigmoid  filters 64 64 128 128 256 256 ... 1024 1024"
+
+wandbconfig.update({"batch_size": BATCH_SIZE, "buffer_size": BUFFER_SIZE,
+                    "epochs": EPOCHS, "learn_rate_dec":LEARN_RATE_DEC,
+                    "learn_rate_disc": LEARN_RATE_DISC, "beta1_disc": BETA1_DISC,
+                    "start_pretrained": START_PRETRAINED, "weight_gan": WEIGHT_GAN_LOSS,
+                    "weight_rec": WEIGHT_REC_LOSS, "weight_dsim": WEIGHT_DSIM_LOSS,
+                    "disc_thresh": TRAIN_DISC_LOWER_THRESH, "dec_thresh": TRAIN_DEC_UPPER_THRESH,
+                    "disc_model_info": DISC_MODEL})
+# ----------------------------------------------------------------------------------------------------------------------
 
 physical_devices = tf.config.list_physical_devices('GPU')
 
@@ -83,14 +112,17 @@ hf = h5py.File(encoder_dataset_path, 'r')
 E_test = hf.get('E_test').value
 hf.close()
 
-# decoder = keras.models.load_model(decoderpath, custom_objects={"bp_mll_loss": bp_mll_loss, "euclidean_distance_loss": utils.euclidean_distance_loss})
-decoder = utils.make_decoder_model()
+if START_PRETRAINED:
+    decoder = keras.models.load_model(decoderpath, custom_objects={"bp_mll_loss": bp_mll_loss, "euclidean_distance_loss": utils.euclidean_distance_loss})
+else:
+    decoder = utils.make_decoder_model()
+
 classifier = keras.models.load_model(classifierpath, custom_objects={"bp_mll_loss": bp_mll_loss, "euclidean_distance_loss": utils.euclidean_distance_loss})
 encoder = keras.Model(classifier.input, classifier.get_layer("global_average_pooling2d").input)
 discriminator = utils.make_discriminator_model()
 
-decoder_optimizer = tf.keras.optimizers.Adam(1e-3)
-discriminator_optimizer = tf.keras.optimizers.Adam(learning_rate=(2*1e-4), beta_1=0.5)
+decoder_optimizer = tf.keras.optimizers.Adam(LEARN_RATE_DEC)
+discriminator_optimizer = tf.keras.optimizers.Adam(learning_rate=LEARN_RATE_DISC, beta_1=BETA1_DISC)
 
 
 def deep_sim_loss(images, y_pred):
@@ -110,17 +142,17 @@ def train_step(batch):
         real_output = discriminator(real_images, training=True)
         fake_output = discriminator(generated_images, training=True)
 
-        dec_loss = utils.generator_loss(fake_output) + tf.constant(1.0/150528.0)*tf.norm(utils.euclidean_distance_loss(fake_images, generated_images)) + tf.constant(1.0/100352.0)*tf.norm(deep_sim_loss(generated_images, fake_embeddings))
+        dec_loss = tf.constant(WEIGHT_GAN_LOSS)*utils.generator_loss(fake_output) + tf.constant(WEIGHT_REC_LOSS)*tf.norm(utils.euclidean_distance_loss(fake_images, generated_images)) + tf.constant(WEIGHT_DSIM_LOSS)*tf.norm(deep_sim_loss(generated_images, fake_embeddings))
         disc_loss = utils.discriminator_loss(real_output, fake_output)
 
     gradients_of_decoder = gen_tape.gradient(dec_loss, decoder.trainable_variables)
     gradients_of_discriminator = disc_tape.gradient(disc_loss, discriminator.trainable_variables)
 
-    if tf.math.less_equal(disc_loss, tf.constant(0.7)):
+    if tf.math.less_equal(disc_loss, tf.constant(TRAIN_DEC_UPPER_THRESH)):
         decoder_optimizer.apply_gradients(zip(gradients_of_decoder, decoder.trainable_variables))
 
     # Train discriminator only if its loss is greater than value (previously 0.35)
-    if tf.math.greater(disc_loss, tf.constant(0.1)):
+    if tf.math.greater(disc_loss, tf.constant(TRAIN_DISC_LOWER_THRESH)):
         discriminator_optimizer.apply_gradients(zip(gradients_of_discriminator, discriminator.trainable_variables))
 
 
@@ -146,8 +178,11 @@ for epoch in range(EPOCHS):
     dec_loss = np.mean(utils.euclidean_distance_loss(generated_test_images, Y_test[0:100, :, :, :]))
     disc_loss = utils.discriminator_loss(real_test_output, fake_test_output)
 
+    wandb.log({"epoch": epoch})
     print("Reconstruction loss " + str(dec_loss))
+    wandb.log({"reconstruction loss": dec_loss})
     print("Discriminator loss " + str(disc_loss))
+    wandb.log({"discriminator loss": disc_loss})
 
 decoder.save(os.path.join(basepath, "../models/decoder_gan"))
 discriminator.save(os.path.join(basepath, "../models/discriminator_gan"))
