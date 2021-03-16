@@ -34,16 +34,16 @@ LEARN_RATE_DEC = 1e-4
 LEARN_RATE_DISC = 2*1e-5
 BETA1_DISC = 0.5
 
-START_PRETRAINED = False
+START_PRETRAINED = True
 
 WEIGHT_GAN_LOSS = 10.0
 WEIGHT_REC_LOSS = 1.0
 WEIGHT_DSIM_LOSS = 1.0
 
-TRAIN_DISC_LOWER_THRESH = 0.1
-TRAIN_DEC_UPPER_THRESH = 0.7
+TRAIN_DISC_LOWER_THRESH = 0.0
+TRAIN_DEC_UPPER_THRESH = 2.0
 
-DISC_MODEL = "(conv stride 2>conv stride 1>batchnorm)*5>globAvPool>sigmoid  filters 64 64 128 128 256 256 ... 1024 1024"
+DISC_MODEL = "(conv stride 2>conv stride 1>batchnorm)*4>globAvPool>sigmoid  filters 64 64 128 128 256 256 512 512"
 
 wandbconfig.update({"batch_size": BATCH_SIZE, "buffer_size": BUFFER_SIZE,
                     "epochs": EPOCHS, "learn_rate_dec":LEARN_RATE_DEC,
