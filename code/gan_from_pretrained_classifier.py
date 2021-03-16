@@ -118,8 +118,8 @@ def train_step(batch):
 
     decoder_optimizer.apply_gradients(zip(gradients_of_decoder, decoder.trainable_variables))
 
-    # Train discriminator only if its loss is greater than value
-    if tf.math.greater(disc_loss, tf.constant(0.35)):
+    # Train discriminator only if its loss is greater than value (previously 0.35)
+    if tf.math.greater(disc_loss, tf.constant(0.1)):
         discriminator_optimizer.apply_gradients(zip(gradients_of_discriminator, discriminator.trainable_variables))
 
 

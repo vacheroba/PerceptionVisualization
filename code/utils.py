@@ -34,21 +34,25 @@ def rgb_ssim_loss(y_true, y_pred):
 def make_discriminator_model():
     model = tf.keras.Sequential()
     model.add(layers.Conv2D(64, 3, strides=2, padding='same', input_shape=[224, 224, 3]))
-    model.add(layers.Conv2D(64, 3, strides=2, padding='same', input_shape=[224, 224, 3]))
+    model.add(layers.Conv2D(64, 3, strides=1, padding='same', input_shape=[224, 224, 3]))
     model.add(layers.LeakyReLU())
-    model.add(layers.Dropout(0.5))
+    model.add(layers.BatchNormalization())
     model.add(layers.Conv2D(128, 3, strides=2, padding='same'))
-    model.add(layers.Conv2D(128, 3, strides=2, padding='same'))
+    model.add(layers.Conv2D(128, 3, strides=1, padding='same'))
     model.add(layers.LeakyReLU())
-    model.add(layers.Dropout(0.5))
+    model.add(layers.BatchNormalization())
     model.add(layers.Conv2D(256, 3, strides=2, padding='same'))
-    model.add(layers.Conv2D(256, 3, strides=2, padding='same'))
+    model.add(layers.Conv2D(256, 3, strides=1, padding='same'))
     model.add(layers.LeakyReLU())
-    model.add(layers.Dropout(0.5))
+    model.add(layers.BatchNormalization())
     model.add(layers.Conv2D(512, 3, strides=2, padding='same'))
-    model.add(layers.Conv2D(512, 3, strides=2, padding='same'))
+    model.add(layers.Conv2D(512, 3, strides=1, padding='same'))
     model.add(layers.LeakyReLU())
-    model.add(layers.Dropout(0.5))
+    model.add(layers.BatchNormalization())
+    model.add(layers.Conv2D(512, 3, strides=2, padding='same'))
+    model.add(layers.Conv2D(512, 3, strides=1, padding='same'))
+    model.add(layers.LeakyReLU())
+    model.add(layers.BatchNormalization())
     model.add(layers.GlobalAveragePooling2D())
     model.add(layers.Dense(1, activation='sigmoid'))
 
@@ -102,7 +106,7 @@ def generator_loss(fake_output):
     return cross_entropy(tf.ones_like(fake_output), fake_output)
 
 
-if __name__ == "__main__":
+def test_losses():
     import numpy as np
     import os
     import h5py
@@ -125,3 +129,12 @@ if __name__ == "__main__":
         g.watch(im2)
         y2 = rgb_ssim_loss(im1, im2)
     print(np.max(np.array(g.gradient(y2, im1))))
+
+
+def test_discriminator():
+    model = make_discriminator_model()
+    model.summary()
+
+
+if __name__ == "__main__":
+    test_discriminator()
