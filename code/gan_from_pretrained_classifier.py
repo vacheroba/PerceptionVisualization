@@ -21,7 +21,7 @@ import tensorflow as tf
 import random
 import math
 
-BATCH_SIZE = 64
+BATCH_SIZE = 4
 BUFFER_SIZE = 10
 EPOCHS = 200
 
@@ -83,14 +83,14 @@ hf = h5py.File(encoder_dataset_path, 'r')
 E_test = hf.get('E_test').value
 hf.close()
 
-#decoder = keras.models.load_model(decoderpath, custom_objects={"bp_mll_loss": bp_mll_loss, "euclidean_distance_loss": utils.euclidean_distance_loss})
-decoder = utils.make_decoder_model()
+decoder = keras.models.load_model(decoderpath, custom_objects={"bp_mll_loss": bp_mll_loss, "euclidean_distance_loss": utils.euclidean_distance_loss})
+# decoder = utils.make_decoder_model()
 classifier = keras.models.load_model(classifierpath, custom_objects={"bp_mll_loss": bp_mll_loss, "euclidean_distance_loss": utils.euclidean_distance_loss})
 encoder = keras.Model(classifier.input, classifier.get_layer("global_average_pooling2d").input)
 discriminator = utils.make_discriminator_model()
 
-decoder_optimizer = tf.keras.optimizers.Adam(1e-4)
-discriminator_optimizer = tf.keras.optimizers.Adam(learning_rate=(2*1e-5), beta_1=0.5)
+decoder_optimizer = tf.keras.optimizers.Adam(1e-2)
+discriminator_optimizer = tf.keras.optimizers.Adam(learning_rate=(2*1e-3), beta_1=0.5)
 
 
 def deep_sim_loss(images, y_pred):
