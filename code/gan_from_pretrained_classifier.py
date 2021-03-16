@@ -116,7 +116,8 @@ def train_step(batch):
     gradients_of_decoder = gen_tape.gradient(dec_loss, decoder.trainable_variables)
     gradients_of_discriminator = disc_tape.gradient(disc_loss, discriminator.trainable_variables)
 
-    decoder_optimizer.apply_gradients(zip(gradients_of_decoder, decoder.trainable_variables))
+    if tf.math.less_equal(disc_loss, tf.constant(0.7)):
+        decoder_optimizer.apply_gradients(zip(gradients_of_decoder, decoder.trainable_variables))
 
     # Train discriminator only if its loss is greater than value (previously 0.35)
     if tf.math.greater(disc_loss, tf.constant(0.1)):
