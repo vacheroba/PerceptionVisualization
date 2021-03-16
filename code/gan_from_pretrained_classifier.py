@@ -21,7 +21,7 @@ import tensorflow as tf
 import random
 import math
 
-BATCH_SIZE = 4
+BATCH_SIZE = 64
 BUFFER_SIZE = 10
 EPOCHS = 200
 
@@ -83,8 +83,8 @@ hf = h5py.File(encoder_dataset_path, 'r')
 E_test = hf.get('E_test').value
 hf.close()
 
-decoder = keras.models.load_model(decoderpath, custom_objects={"bp_mll_loss": bp_mll_loss, "euclidean_distance_loss": utils.euclidean_distance_loss})
-# decoder = utils.make_decoder_model()
+# decoder = keras.models.load_model(decoderpath, custom_objects={"bp_mll_loss": bp_mll_loss, "euclidean_distance_loss": utils.euclidean_distance_loss})
+decoder = utils.make_decoder_model()
 classifier = keras.models.load_model(classifierpath, custom_objects={"bp_mll_loss": bp_mll_loss, "euclidean_distance_loss": utils.euclidean_distance_loss})
 encoder = keras.Model(classifier.input, classifier.get_layer("global_average_pooling2d").input)
 discriminator = utils.make_discriminator_model()
