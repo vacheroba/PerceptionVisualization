@@ -36,14 +36,15 @@ BETA1_DISC = 0.5
 
 START_PRETRAINED = True
 
-WEIGHT_GAN_LOSS = 0.8
-WEIGHT_REC_LOSS = 0.1
-WEIGHT_DSIM_LOSS = 0.1
+WEIGHT_GAN_LOSS = 1
+WEIGHT_REC_LOSS = 1
+WEIGHT_DSIM_LOSS = 1
 
 TRAIN_DISC_LOWER_THRESH = 0.0
 TRAIN_DEC_UPPER_THRESH = 2.0
 
-DISC_MODEL = "(conv stride 2>conv stride 1>batchnorm)*4>globAvPool>sigmoid  filters 64 64 128 128 256 256 512 512"
+DISC_MODEL = "(conv stride 2>conv stride 1>batchnorm)*4>globAvPool>sigmoid  filters 64 64 128 128 256 256 512 512\n" \
+             "discriminator and generator losses have now tf.math.log added to them"
 
 wandbconfig.update({"batch_size": BATCH_SIZE, "buffer_size": BUFFER_SIZE,
                     "epochs": EPOCHS, "learn_rate_dec":LEARN_RATE_DEC,
