@@ -22,7 +22,7 @@ import random
 import math
 import wandb
 
-TEST_CONFIG = True
+TEST_CONFIG = False
 
 # ----------------------------------------------------------------------------------------------------------WANDB PARAMS
 if TEST_CONFIG:
