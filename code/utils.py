@@ -108,8 +108,13 @@ def discriminator_loss_nolog(real_output, fake_output):
     total_loss = real_loss + fake_loss
     return total_loss
 
+
 def generator_loss(fake_output):
     return tf.math.log(cross_entropy(tf.ones_like(fake_output)*0.95, fake_output))
+
+
+def generator_loss_nolog(fake_output):
+    return cross_entropy(tf.ones_like(fake_output)*0.95, fake_output)
 
 
 def test_losses():
