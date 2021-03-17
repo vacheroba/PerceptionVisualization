@@ -34,7 +34,7 @@ LEARN_RATE_DEC = 1e-4
 LEARN_RATE_DISC = 1e-4
 BETA1_DISC = 0.9
 
-START_PRETRAINED = True
+START_PRETRAINED = False
 
 WEIGHT_GAN_LOSS = 1000.0
 WEIGHT_REC_LOSS = 1.0
@@ -145,15 +145,16 @@ def train_step(batch):
 
         dec_loss = tf.constant(WEIGHT_GAN_LOSS)*utils.generator_loss(fake_output) + tf.constant(WEIGHT_REC_LOSS)*tf.norm(utils.euclidean_distance_loss(fake_images, generated_images)) + tf.constant(WEIGHT_DSIM_LOSS)*tf.norm(deep_sim_loss(generated_images, fake_embeddings))
         disc_loss = utils.discriminator_loss(real_output, fake_output)
+        disc_loss_nolog = utils.discriminator_loss_nolog(real_output, fake_output)
 
     gradients_of_decoder = gen_tape.gradient(dec_loss, decoder.trainable_variables)
     gradients_of_discriminator = disc_tape.gradient(disc_loss, discriminator.trainable_variables)
 
-    if tf.math.less_equal(disc_loss, tf.constant(TRAIN_DEC_UPPER_THRESH)):
+    if tf.math.less_equal(disc_loss_nolog, tf.constant(TRAIN_DEC_UPPER_THRESH)):
         decoder_optimizer.apply_gradients(zip(gradients_of_decoder, decoder.trainable_variables))
 
     # Train discriminator only if its loss is greater than value (previously 0.35)
-    if tf.math.greater(disc_loss, tf.constant(TRAIN_DISC_LOWER_THRESH)):
+    if tf.math.greater(disc_loss_nolog, tf.constant(TRAIN_DISC_LOWER_THRESH)):
         discriminator_optimizer.apply_gradients(zip(gradients_of_discriminator, discriminator.trainable_variables))
 
 
