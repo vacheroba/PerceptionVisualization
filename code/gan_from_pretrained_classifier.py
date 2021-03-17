@@ -151,10 +151,12 @@ def train_step(batch):
     gradients_of_discriminator = disc_tape.gradient(disc_loss, discriminator.trainable_variables)
 
     if tf.math.less_equal(disc_loss_nolog, tf.constant(TRAIN_DEC_UPPER_THRESH)):
+        tf.print("training decoder")
         decoder_optimizer.apply_gradients(zip(gradients_of_decoder, decoder.trainable_variables))
 
     # Train discriminator only if its loss is greater than value (previously 0.35)
     if tf.math.greater(disc_loss_nolog, tf.constant(TRAIN_DISC_LOWER_THRESH)):
+        tf.print("training discriminator")
         discriminator_optimizer.apply_gradients(zip(gradients_of_discriminator, discriminator.trainable_variables))
 
 
