@@ -5,7 +5,7 @@ import keras.losses as losses
 
 SSIM_GAMMA = 11000.0
 
-cross_entropy = tf.keras.losses.BinaryCrossentropy()
+cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True)
 
 
 def euclidean_distance_loss(y_true, y_pred):
@@ -33,25 +33,24 @@ def rgb_ssim_loss(y_true, y_pred):
 
 def make_discriminator_model():
     model = tf.keras.Sequential()
-    model.add(layers.Conv2D(64, 3, strides=2, padding='same', input_shape=[224, 224, 3]))
-    model.add(layers.Conv2D(64, 3, strides=1, padding='same', input_shape=[224, 224, 3]))
+    model.add(layers.Conv2D(64, 5, strides=2, padding='same', input_shape=[224, 224, 3]))
+    model.add(layers.Conv2D(64, 5, strides=1, padding='same', input_shape=[224, 224, 3]))
     model.add(layers.LeakyReLU())
     model.add(layers.BatchNormalization())
-    model.add(layers.Conv2D(128, 3, strides=2, padding='same'))
-    model.add(layers.Conv2D(128, 3, strides=1, padding='same'))
+    model.add(layers.Conv2D(128, 5, strides=2, padding='same'))
+    model.add(layers.Conv2D(128, 5, strides=1, padding='same'))
     model.add(layers.LeakyReLU())
     model.add(layers.BatchNormalization())
-    model.add(layers.Conv2D(256, 3, strides=2, padding='same'))
-    model.add(layers.Conv2D(256, 3, strides=1, padding='same'))
+    model.add(layers.Conv2D(256, 5, strides=2, padding='same'))
+    model.add(layers.Conv2D(256, 5, strides=1, padding='same'))
     model.add(layers.LeakyReLU())
     model.add(layers.BatchNormalization())
-    model.add(layers.Conv2D(512, 3, strides=2, padding='same'))
-    model.add(layers.Conv2D(512, 3, strides=1, padding='same'))
-    model.add(layers.LeakyReLU())
+    model.add(layers.Conv2D(512, 5, strides=2, padding='same'))
+    model.add(layers.Conv2D(512, 5, strides=1, padding='same'))
     model.add(layers.LeakyReLU())
     model.add(layers.BatchNormalization())
-    model.add(layers.GlobalAveragePooling2D())
-    model.add(layers.Dense(1, activation='sigmoid'))
+    model.add(layers.Flatten())
+    model.add(layers.Dense(1))
 
     return model
 
@@ -94,19 +93,19 @@ def make_decoder_model():
 
 def discriminator_loss(real_output, fake_output):
     real_loss = tf.math.log(cross_entropy(tf.ones_like(real_output)*0.95, real_output))
-    fake_loss = tf.math.log(cross_entropy(tf.ones_like(real_output)*0.05, fake_output))
+    fake_loss = tf.math.log(cross_entropy(tf.ones_like(fake_output)*0.05, fake_output))
     total_loss = real_loss + fake_loss
     return total_loss
 
 
 def discriminator_loss_nolog(real_output, fake_output):
     real_loss = cross_entropy(tf.ones_like(real_output)*0.95, real_output)
-    fake_loss = cross_entropy(tf.ones_like(real_output)*0.05, fake_output)
+    fake_loss = cross_entropy(tf.ones_like(fake_output)*0.05, fake_output)
     total_loss = real_loss + fake_loss
     return total_loss
 
 def generator_loss(fake_output):
-    return tf.math.log(cross_entropy(tf.ones_like(fake_output), fake_output))
+    return tf.math.log(cross_entropy(tf.ones_like(fake_output)*0.95, fake_output))
 
 
 def test_losses():

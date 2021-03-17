@@ -22,11 +22,13 @@ import random
 import math
 import wandb
 
-# ----------------------------------------------------------------------------------------------------------WANDB PARAMS
-wandb.init(project='PerceptionVisualization', entity='loris2222')
-wandbconfig = wandb.config
+TEST_CONFIG = False
 
-BATCH_SIZE = 64
+# ----------------------------------------------------------------------------------------------------------WANDB PARAMS
+if TEST_CONFIG:
+    BATCH_SIZE = 4
+else:
+    BATCH_SIZE = 64
 BUFFER_SIZE = 10
 EPOCHS = 200
 
@@ -46,13 +48,16 @@ TRAIN_DEC_UPPER_THRESH = 0.2  # maximum 2.0
 DISC_MODEL = "(conv stride 2>conv stride 1>batchnorm)*4>globAvPool>sigmoid  filters 64 64 128 128 256 256 512 512\n" \
              "discriminator and generator losses have now tf.math.log added to them"
 
-wandbconfig.update({"batch_size": BATCH_SIZE, "buffer_size": BUFFER_SIZE,
-                    "epochs": EPOCHS, "learn_rate_dec":LEARN_RATE_DEC,
-                    "learn_rate_disc": LEARN_RATE_DISC, "beta1_disc": BETA1_DISC,
-                    "start_pretrained": START_PRETRAINED, "weight_gan": WEIGHT_GAN_LOSS,
-                    "weight_rec": WEIGHT_REC_LOSS, "weight_dsim": WEIGHT_DSIM_LOSS,
-                    "disc_thresh": TRAIN_DISC_LOWER_THRESH, "dec_thresh": TRAIN_DEC_UPPER_THRESH,
-                    "disc_model_info": DISC_MODEL})
+if not TEST_CONFIG:
+    wandb.init(project='PerceptionVisualization', entity='loris2222')
+    wandbconfig = wandb.config
+    wandbconfig.update({"batch_size": BATCH_SIZE, "buffer_size": BUFFER_SIZE,
+                        "epochs": EPOCHS, "learn_rate_dec":LEARN_RATE_DEC,
+                        "learn_rate_disc": LEARN_RATE_DISC, "beta1_disc": BETA1_DISC,
+                        "start_pretrained": START_PRETRAINED, "weight_gan": WEIGHT_GAN_LOSS,
+                        "weight_rec": WEIGHT_REC_LOSS, "weight_dsim": WEIGHT_DSIM_LOSS,
+                        "disc_thresh": TRAIN_DISC_LOWER_THRESH, "dec_thresh": TRAIN_DEC_UPPER_THRESH,
+                        "disc_model_info": DISC_MODEL})
 # ----------------------------------------------------------------------------------------------------------------------
 
 physical_devices = tf.config.list_physical_devices('GPU')
@@ -105,12 +110,14 @@ def generator():
 
 # Load targets (The targets for the decoder are the original inputs, X in main dataset)
 hf = h5py.File(main_dataset_path, 'r')
-Y_test = hf.get('X_Test').value
+if not TEST_CONFIG:
+    Y_test = hf.get('X_Test').value
 
 # Load inputs(The outputs of the encoder, E in encoder dataset)
 hf.close()
 hf = h5py.File(encoder_dataset_path, 'r')
-E_test = hf.get('E_test').value
+if not TEST_CONFIG:
+    E_test = hf.get('E_test').value
 hf.close()
 
 if START_PRETRAINED:
@@ -133,6 +140,7 @@ def deep_sim_loss(images, y_pred):
 
 @tf.function
 def train_step(batch):
+    # Batching adds a dimension but my batch is already made up of all images
     real_images = batch[0][0, :, :, :, :]
     fake_images = batch[1][0, :, :, :, :]
     fake_embeddings = batch[2][0, :, :, :, :]
@@ -151,12 +159,10 @@ def train_step(batch):
     gradients_of_discriminator = disc_tape.gradient(disc_loss, discriminator.trainable_variables)
 
     if tf.math.less_equal(disc_loss_nolog, tf.constant(TRAIN_DEC_UPPER_THRESH)):
-        tf.print("training decoder")
         decoder_optimizer.apply_gradients(zip(gradients_of_decoder, decoder.trainable_variables))
 
     # Train discriminator only if its loss is greater than value (previously 0.35)
     if tf.math.greater(disc_loss_nolog, tf.constant(TRAIN_DISC_LOWER_THRESH)):
-        tf.print("training discriminator")
         discriminator_optimizer.apply_gradients(zip(gradients_of_discriminator, discriminator.trainable_variables))
 
 
