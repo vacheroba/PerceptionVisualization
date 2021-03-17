@@ -38,15 +38,15 @@ BETA1_DISC = 0.9
 
 START_PRETRAINED = False
 
-WEIGHT_GAN_LOSS = 1000.0
-WEIGHT_REC_LOSS = 1.0
-WEIGHT_DSIM_LOSS = 1.0
+WEIGHT_GAN_LOSS = 0.99
+WEIGHT_REC_LOSS = 0.01
+WEIGHT_DSIM_LOSS = 0.01
 
 TRAIN_DISC_LOWER_THRESH = 0.01  # minimum 0.0
 TRAIN_DEC_UPPER_THRESH = 0.2  # maximum 2.0
 
 DISC_MODEL = "(conv stride 2>conv stride 1>batchnorm)*4>globAvPool>sigmoid  filters 64 64 128 128 256 256 512 512\n" \
-             "discriminator and generator losses have now tf.math.log added to them"
+             "always training both disc and dec"
 
 if not TEST_CONFIG:
     wandb.init(project='PerceptionVisualization', entity='loris2222')
@@ -158,12 +158,12 @@ def train_step(batch):
     gradients_of_decoder = gen_tape.gradient(dec_loss, decoder.trainable_variables)
     gradients_of_discriminator = disc_tape.gradient(disc_loss, discriminator.trainable_variables)
 
-    if tf.math.less_equal(disc_loss_nolog, tf.constant(TRAIN_DEC_UPPER_THRESH)):
-        decoder_optimizer.apply_gradients(zip(gradients_of_decoder, decoder.trainable_variables))
+    #if tf.math.less_equal(disc_loss_nolog, tf.constant(TRAIN_DEC_UPPER_THRESH)):
+    decoder_optimizer.apply_gradients(zip(gradients_of_decoder, decoder.trainable_variables))
 
     # Train discriminator only if its loss is greater than value (previously 0.35)
-    if tf.math.greater(disc_loss_nolog, tf.constant(TRAIN_DISC_LOWER_THRESH)):
-        discriminator_optimizer.apply_gradients(zip(gradients_of_discriminator, discriminator.trainable_variables))
+    #if tf.math.greater(disc_loss_nolog, tf.constant(TRAIN_DISC_LOWER_THRESH)):
+    discriminator_optimizer.apply_gradients(zip(gradients_of_discriminator, discriminator.trainable_variables))
 
 
 for epoch in range(EPOCHS):
