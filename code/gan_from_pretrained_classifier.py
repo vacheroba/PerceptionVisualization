@@ -34,7 +34,7 @@ LEARN_RATE_DEC = 1e-4
 LEARN_RATE_DISC = 1e-4
 BETA1_DISC = 0.9
 
-START_PRETRAINED = True
+START_PRETRAINED = False
 
 WEIGHT_GAN_LOSS = 1000.0
 WEIGHT_REC_LOSS = 1.0
@@ -178,7 +178,7 @@ for epoch in range(EPOCHS):
     fake_test_output = discriminator(generated_test_images, training=False)
 
     dec_loss = np.mean(utils.euclidean_distance_loss(generated_test_images, Y_test[0:100, :, :, :]))
-    disc_loss = utils.discriminator_loss(real_test_output, fake_test_output)
+    disc_loss = utils.discriminator_loss_nolog(real_test_output, fake_test_output)
 
     wandb.log({"epoch": epoch})
     print("Reconstruction loss " + str(dec_loss))
