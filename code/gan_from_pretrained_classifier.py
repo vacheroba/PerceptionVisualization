@@ -31,17 +31,17 @@ BUFFER_SIZE = 10
 EPOCHS = 200
 
 LEARN_RATE_DEC = 1e-4
-LEARN_RATE_DISC = 2*1e-5
-BETA1_DISC = 0.5
+LEARN_RATE_DISC = 1e-4
+BETA1_DISC = 0.9
 
-START_PRETRAINED = False
+START_PRETRAINED = True
 
-WEIGHT_GAN_LOSS = 1.0
+WEIGHT_GAN_LOSS = 1000.0
 WEIGHT_REC_LOSS = 1.0
 WEIGHT_DSIM_LOSS = 1.0
 
-TRAIN_DISC_LOWER_THRESH = 0.0
-TRAIN_DEC_UPPER_THRESH = 2.0
+TRAIN_DISC_LOWER_THRESH = 0.1  # set to 0.0
+TRAIN_DEC_UPPER_THRESH = 0.7  # set to 2.0
 
 DISC_MODEL = "(conv stride 2>conv stride 1>batchnorm)*4>globAvPool>sigmoid  filters 64 64 128 128 256 256 512 512\n" \
              "discriminator and generator losses have now tf.math.log added to them"
