@@ -22,7 +22,7 @@ import random
 import math
 import wandb
 
-TEST_CONFIG = False
+TEST_CONFIG = True
 
 # ----------------------------------------------------------------------------------------------------------WANDB PARAMS
 if TEST_CONFIG:
@@ -175,10 +175,19 @@ for epoch in range(EPOCHS):
 
     print("EPOCH "+str(epoch)+"/"+str(EPOCHS))
     step_counter = 0
+    accumulator_dec_loss = 0
+    accumulator_disc_loss = 0
     for image_batch in ds_counter:
         print("\rstep "+str(step_counter)+"/"+str(BATCH_COUNT), end='')
         train_step(image_batch)
+        generated_test_images = decoder(image_batch[2][0, :, :, :, :], training=False)
+        real_test_output = discriminator(image_batch[0][0, :, :, :, :], training=False)
+        fake_test_output = discriminator(generated_test_images, training=False)
+        accumulator_dec_loss += np.mean(utils.euclidean_distance_loss(generated_test_images, image_batch[1][0, :, :, :, :]))
+        accumulator_disc_loss += utils.discriminator_loss_nolog(real_test_output, fake_test_output)
         step_counter += 1
+        print(" dec loss: " + str(accumulator_dec_loss/float(step_counter)), end='')
+        print(" disc loss: " + str(accumulator_disc_loss/float(step_counter)), end='')
     print("\n")
 
     generated_test_images = decoder(E_test[0:100, :, :, :], training=False)
@@ -189,10 +198,12 @@ for epoch in range(EPOCHS):
     disc_loss = utils.discriminator_loss_nolog(real_test_output, fake_test_output)
 
     wandb.log({"epoch": epoch})
-    print("Reconstruction loss " + str(dec_loss))
-    wandb.log({"reconstruction loss": dec_loss})
-    print("Discriminator loss " + str(disc_loss))
-    wandb.log({"discriminator loss": disc_loss})
+    wandb.log({"train reconstruction loss": accumulator_dec_loss/step_counter})
+    wandb.log({"train discriminator loss": accumulator_disc_loss/step_counter})
+    print("Test Reconstruction loss " + str(dec_loss))
+    wandb.log({"test reconstruction loss": dec_loss})
+    print("Test Discriminator loss " + str(disc_loss))
+    wandb.log({"test discriminator loss": disc_loss})
 
 decoder.save(os.path.join(basepath, "../models/decoder_gan"))
 discriminator.save(os.path.join(basepath, "../models/discriminator_gan"))
