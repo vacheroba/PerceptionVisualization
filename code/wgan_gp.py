@@ -280,6 +280,13 @@ class WGAN(keras.Model):
         return {"d_loss": d_loss, "g_loss": g_loss}
 
 
+class CustomCallback(keras.callbacks.Callback):
+    def on_train_batch_end(self, batch, logs=None):
+        keys = list(logs.keys())
+        print("...Training: end of batch {}; got log keys: {}".format(batch, keys))
+        wandb.log({"discriminator loss": logs.keys["d_loss"]})
+        wandb.log({"decoder loss": logs.keys["g_loss"]})
+
 # Instantiate the WGAN model.
 wgan = WGAN(
     enc=classifier,
