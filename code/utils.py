@@ -5,7 +5,7 @@ import keras.losses as losses
 
 SSIM_GAMMA = 11000.0
 
-cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True)
+cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=False)
 
 
 def euclidean_distance_loss(y_true, y_pred):
@@ -48,7 +48,7 @@ def make_discriminator_model():
     model.add(layers.LeakyReLU())
     model.add(layers.Flatten())
     model.add(layers.Dropout(0.2))
-    model.add(layers.Dense(1))
+    model.add(layers.Dense(1, activation="sigmoid"))
 
     return model
 

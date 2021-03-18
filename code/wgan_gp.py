@@ -196,7 +196,7 @@ class WGAN(keras.Model):
         and added to the discriminator loss.
         """
         # Get the interpolated image
-        alpha = tf.random.normal([math.floor(batch_size / 2), 1, 1, 1], 0.0, 1.0)
+        alpha = tf.random.uniform([math.floor(batch_size / 2), 1, 1, 1], 0.0, 1.0)
         diff = fake_images - real_images
         interpolated = real_images + alpha * diff
 
@@ -275,15 +275,6 @@ class WGAN(keras.Model):
 
         return {"d_loss": d_loss, "g_loss": g_loss}
 
-
-class callbacklog(keras.callbacks.Callback):
-    def on_epoch_end(self, batch, logs=None):
-        if not TEST_CONFIG:
-            keys = list(logs.keys())
-            print("...Training: end of batch {}; got log keys: {}".format(batch, keys))
-            wandb.log({"discriminator loss": logs.keys["d_loss"]})
-            wandb.log({"decoder loss": logs.keys["g_loss"]})
-
 # Instantiate the WGAN model.
 wgan = WGAN(
     enc=classifier,
@@ -303,7 +294,7 @@ wgan.compile(
 )
 
 # Start training the model.
-wgan.fit(ds_counter, batch_size=BATCH_SIZE, epochs=EPOCHS, steps_per_epoch=math.floor(NUM_IMAGES/BATCH_SIZE), callbacks=[callbacklog()])
+wgan.fit(ds_counter, batch_size=BATCH_SIZE, epochs=EPOCHS, steps_per_epoch=math.floor(NUM_IMAGES/BATCH_SIZE))
 
 decoder.save(os.path.join(basepath, "../models/decoder_wgan_gp"))
 discriminator.save(os.path.join(basepath, "../models/discriminator_wgan_gp"))
