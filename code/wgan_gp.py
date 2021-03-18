@@ -67,6 +67,7 @@ if not TEST_CONFIG:
                         "gp_weight": WEIGHT_GP, "discriminator_steps": DISC_STEPS, "disc_model_info": DISC_MODEL})
 # ----------------------------------------------------------------------------------------------------------------------
 
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 physical_devices = tf.config.list_physical_devices('GPU')
 
 for h in physical_devices:
