@@ -32,8 +32,8 @@ else:
 BUFFER_SIZE = 10
 EPOCHS = 20
 
-LEARN_RATE_DEC = 2e-4
-LEARN_RATE_DISC = 2e-4
+LEARN_RATE_DEC = 1e-4
+LEARN_RATE_DISC = 1e-4
 BETA1_DEC = 0.5
 BETA1_DISC = 0.5
 BETA2_DEC = 0.9
@@ -48,7 +48,7 @@ WEIGHT_DSIM_LOSS = 1.0
 WEIGHT_GP = 10.0
 DISC_STEPS = 1
 
-GPU_ID = 0
+GPU_ID = 1
 
 TRAIN_DISC_LOWER_THRESH = 0.01  # minimum 0.0
 TRAIN_DEC_UPPER_THRESH = 0.2  # maximum 2.0
@@ -151,8 +151,8 @@ classifier = keras.models.load_model(classifierpath, custom_objects={"bp_mll_los
 encoder = keras.Model(classifier.input, classifier.get_layer("global_average_pooling2d").input)
 discriminator = utils.make_discriminator_model()
 
-decoder_optimizer = tf.keras.optimizers.Adam(learning_rate=LEARN_RATE_DEC, beta_1=BETA1_DEC)
-discriminator_optimizer = tf.keras.optimizers.Adam(learning_rate=LEARN_RATE_DISC, beta_1=BETA1_DISC)
+decoder_optimizer = tf.keras.optimizers.Adam(learning_rate=LEARN_RATE_DEC, beta_1=BETA1_DEC, beta_2=BETA2_DEC)
+discriminator_optimizer = tf.keras.optimizers.Adam(learning_rate=LEARN_RATE_DISC, beta_1=BETA1_DISC, beta_2=BETA2_DISC)
 
 
 def deep_sim_loss(images, y_pred):
@@ -262,9 +262,9 @@ class WGAN(keras.Model):
             # Get the discriminator logits for fake images
             gen_img_logits = self.discriminator(generated_images, training=True)
             # Calculate the generator loss
-            g_loss = tf.constant(WEIGHT_GAN_LOSS)*self.g_loss_fn(gen_img_logits)
-                     # + tf.constant(WEIGHT_REC_LOSS)*utils.euclidean_distance_loss(fake_images_reconstruction_targets, generated_images)
-                     # + tf.constant(WEIGHT_DSIM_LOSS)*deep_sim_loss(generated_images, fake_embeddings)
+            g_loss = tf.constant(WEIGHT_GAN_LOSS)*self.g_loss_fn(gen_img_logits) \
+                     + tf.constant(WEIGHT_REC_LOSS)*utils.euclidean_distance_loss(fake_images_reconstruction_targets, generated_images) \
+                     + tf.constant(WEIGHT_DSIM_LOSS)*deep_sim_loss(generated_images, fake_embeddings)
 
         # Get the gradients w.r.t the generator loss
         gen_gradient = tape.gradient(g_loss, self.generator.trainable_variables)
