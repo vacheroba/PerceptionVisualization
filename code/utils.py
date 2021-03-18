@@ -5,11 +5,11 @@ import keras.losses as losses
 
 SSIM_GAMMA = 11000.0
 
-cross_entropy = tf.keras.losses.BinaryCrossentropy()
+cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True)
 
 
 def euclidean_distance_loss(y_true, y_pred):
-    return K.sum(K.square(y_pred - y_true), axis=(1, 2, 3))  # axis = -1
+    return tf.reduce_mean(K.square(y_pred - y_true))  # axis = -1
 
 
 def euclidean_ssim_loss(y_true, y_pred):
@@ -33,28 +33,22 @@ def rgb_ssim_loss(y_true, y_pred):
 
 def make_discriminator_model():
     model = tf.keras.Sequential()
-    model.add(layers.Conv2D(64, 5, strides=1, padding='same', input_shape=[224, 224, 3]))
     model.add(layers.Conv2D(64, 5, strides=2, padding='same', input_shape=[224, 224, 3]))
     model.add(layers.LeakyReLU())
-    model.add(layers.BatchNormalization())
-    model.add(layers.Conv2D(128, 5, strides=1, padding='same'))
     model.add(layers.Conv2D(128, 5, strides=2, padding='same'))
     model.add(layers.LeakyReLU())
-    model.add(layers.BatchNormalization())
-    model.add(layers.Conv2D(256, 5, strides=1, padding='same'))
+    model.add(layers.Dropout(0.3))
     model.add(layers.Conv2D(256, 5, strides=2, padding='same'))
     model.add(layers.LeakyReLU())
-    model.add(layers.BatchNormalization())
-    model.add(layers.Conv2D(512, 5, strides=1, padding='same'))
+    model.add(layers.Dropout(0.3))
     model.add(layers.Conv2D(512, 5, strides=2, padding='same'))
     model.add(layers.LeakyReLU())
-    model.add(layers.BatchNormalization())
-    model.add(layers.Conv2D(1024, 5, strides=1, padding='same'))
+    model.add(layers.Dropout(0.3))
     model.add(layers.Conv2D(1024, 5, strides=2, padding='same'))
     model.add(layers.LeakyReLU())
-    model.add(layers.BatchNormalization())
-    model.add(layers.GlobalAveragePooling2D())
-    model.add(layers.Dense(1, activation="sigmoid"))
+    model.add(layers.Flatten())
+    model.add(layers.Dropout(0.2))
+    model.add(layers.Dense(1))
 
     return model
 
