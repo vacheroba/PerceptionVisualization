@@ -273,19 +273,16 @@ class WGAN(keras.Model):
             zip(gen_gradient, self.generator.trainable_variables)
         )
 
-        if not TEST_CONFIG:
-            wandb.log({"discriminator loss": d_loss})
-            wandb.log({"decoder loss": g_loss})
-
         return {"d_loss": d_loss, "g_loss": g_loss}
 
 
-class CustomCallback(keras.callbacks.Callback):
-    def on_train_batch_end(self, batch, logs=None):
-        keys = list(logs.keys())
-        print("...Training: end of batch {}; got log keys: {}".format(batch, keys))
-        wandb.log({"discriminator loss": logs.keys["d_loss"]})
-        wandb.log({"decoder loss": logs.keys["g_loss"]})
+class callbacklog(keras.callbacks.Callback):
+    def on_epoch_end(self, batch, logs=None):
+        if not TEST_CONFIG:
+            keys = list(logs.keys())
+            print("...Training: end of batch {}; got log keys: {}".format(batch, keys))
+            wandb.log({"discriminator loss": logs.keys["d_loss"]})
+            wandb.log({"decoder loss": logs.keys["g_loss"]})
 
 # Instantiate the WGAN model.
 wgan = WGAN(
@@ -306,7 +303,7 @@ wgan.compile(
 )
 
 # Start training the model.
-wgan.fit(ds_counter, batch_size=BATCH_SIZE, epochs=EPOCHS, steps_per_epoch=math.floor(NUM_IMAGES/BATCH_SIZE))
+wgan.fit(ds_counter, batch_size=BATCH_SIZE, epochs=EPOCHS, steps_per_epoch=math.floor(NUM_IMAGES/BATCH_SIZE), callbacks=[callbacklog()])
 
 decoder.save(os.path.join(basepath, "../models/decoder_wgan_gp"))
 discriminator.save(os.path.join(basepath, "../models/discriminator_wgan_gp"))
