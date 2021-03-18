@@ -28,9 +28,9 @@ TEST_CONFIG = False
 if TEST_CONFIG:
     BATCH_SIZE = 4
 else:
-    BATCH_SIZE = 64
+    BATCH_SIZE = 32
 BUFFER_SIZE = 10
-EPOCHS = 10
+EPOCHS = 20
 
 LEARN_RATE_DEC = 2e-4
 LEARN_RATE_DISC = 2e-4
@@ -46,7 +46,9 @@ WEIGHT_REC_LOSS = 1.0
 WEIGHT_DSIM_LOSS = 1.0
 
 WEIGHT_GP = 10.0
-DISC_STEPS = 3
+DISC_STEPS = 1
+
+GPU_ID = 0
 
 TRAIN_DISC_LOWER_THRESH = 0.01  # minimum 0.0
 TRAIN_DEC_UPPER_THRESH = 0.2  # maximum 2.0
@@ -63,13 +65,13 @@ if not TEST_CONFIG:
                         "beta2_dec": BETA2_DEC, "beta1_disc": BETA1_DISC, "beta2_disc": BETA2_DISC,
                         "start_pretrained": START_PRETRAINED, "weight_gan": WEIGHT_GAN_LOSS,
                         "weight_rec": WEIGHT_REC_LOSS, "weight_dsim": WEIGHT_DSIM_LOSS,
-                        "disc_thresh": TRAIN_DISC_LOWER_THRESH, "dec_thresh": TRAIN_DEC_UPPER_THRESH,
+                        "disc_thresh": TRAIN_DISC_LOWER_THRESH, "dec_thresh": TRAIN_DEC_UPPER_THRESH, "gpu": GPU_ID,
                         "gp_weight": WEIGHT_GP, "discriminator_steps": DISC_STEPS, "disc_model_info": DISC_MODEL})
 # ----------------------------------------------------------------------------------------------------------------------
 
-os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 if not TEST_CONFIG:
-    os.environ["CUDA_VISIBLE_DEVICES"] = "1"  # Use Titan XP on monkey
+    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(GPU_ID)  # Use Titan XP on monkey, set to 0 in piggy
 physical_devices = tf.config.list_physical_devices('GPU')
 
 for h in physical_devices:
@@ -260,9 +262,9 @@ class WGAN(keras.Model):
             # Get the discriminator logits for fake images
             gen_img_logits = self.discriminator(generated_images, training=True)
             # Calculate the generator loss
-            g_loss = tf.constant(WEIGHT_GAN_LOSS)*self.g_loss_fn(gen_img_logits) + \
-                     tf.constant(WEIGHT_REC_LOSS)*utils.euclidean_distance_loss(fake_images_reconstruction_targets, generated_images) + \
-                     tf.constant(WEIGHT_DSIM_LOSS)*deep_sim_loss(generated_images, fake_embeddings)
+            g_loss = tf.constant(WEIGHT_GAN_LOSS)*self.g_loss_fn(gen_img_logits)
+                     # + tf.constant(WEIGHT_REC_LOSS)*utils.euclidean_distance_loss(fake_images_reconstruction_targets, generated_images)
+                     # + tf.constant(WEIGHT_DSIM_LOSS)*deep_sim_loss(generated_images, fake_embeddings)
 
         # Get the gradients w.r.t the generator loss
         gen_gradient = tape.gradient(g_loss, self.generator.trainable_variables)
@@ -270,6 +272,11 @@ class WGAN(keras.Model):
         self.g_optimizer.apply_gradients(
             zip(gen_gradient, self.generator.trainable_variables)
         )
+
+        if not TEST_CONFIG:
+            wandb.log({"discriminator loss": d_loss})
+            wandb.log({"decoder loss": g_loss})
+
         return {"d_loss": d_loss, "g_loss": g_loss}
 
 
