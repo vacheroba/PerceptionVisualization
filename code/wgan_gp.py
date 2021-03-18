@@ -67,8 +67,9 @@ if not TEST_CONFIG:
                         "gp_weight": WEIGHT_GP, "discriminator_steps": DISC_STEPS, "disc_model_info": DISC_MODEL})
 # ----------------------------------------------------------------------------------------------------------------------
 
-os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+if not TEST_CONFIG:
+    os.environ["CUDA_VISIBLE_DEVICES"] = "1"  # Use Titan XP on monkey
 physical_devices = tf.config.list_physical_devices('GPU')
 
 for h in physical_devices:
@@ -123,7 +124,9 @@ ds_counter = tf.data.Dataset.from_generator(generator, (tf.float32, tf.float32, 
                                                 tf.TensorShape([math.floor(BATCH_SIZE / 2), 224, 224, 3]),
                                                 tf.TensorShape([math.floor(BATCH_SIZE / 2), 224, 224, 3]),
                                                 tf.TensorShape([math.floor(BATCH_SIZE / 2), 7, 7, 2048])))
-ds_counter = ds_counter.shuffle(BUFFER_SIZE)
+
+ds_counter = ds_counter.shuffle(BUFFER_SIZE, reshuffle_each_iteration=True)
+ds_counter = ds_counter.repeat(EPOCHS)
 
 # Load targets (The targets for the decoder are the original inputs, X in main dataset)
 hf = h5py.File(main_dataset_path, 'r')
