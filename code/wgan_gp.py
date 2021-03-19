@@ -21,6 +21,7 @@ import tensorflow as tf
 import random
 import math
 import wandb
+import socket
 
 TEST_CONFIG = False
 
@@ -28,7 +29,7 @@ TEST_CONFIG = False
 if TEST_CONFIG:
     BATCH_SIZE = 16  # 4
 else:
-    BATCH_SIZE = 512  # 64
+    BATCH_SIZE = 256  # 64
 BUFFER_SIZE = 10
 EPOCHS = 100
 
@@ -48,7 +49,11 @@ WEIGHT_DSIM_LOSS = 0.1
 WEIGHT_GP = 10.0
 DISC_STEPS = 4
 
-GPU_ID = 0
+host = socket.gethostname()
+if TEST_CONFIG or host == "piggypiggy":
+    GPU_ID = 0
+else:
+    GPU_ID = 1
 
 TRAIN_DISC_LOWER_THRESH = 0.01  # minimum 0.0
 TRAIN_DEC_UPPER_THRESH = 0.2  # maximum 2.0
