@@ -26,9 +26,9 @@ TEST_CONFIG = False
 
 # ----------------------------------------------------------------------------------------------------------WANDB PARAMS
 if TEST_CONFIG:
-    BATCH_SIZE = 4
+    BATCH_SIZE = 16  # 4
 else:
-    BATCH_SIZE = 48  # 64
+    BATCH_SIZE = 512  # 64
 BUFFER_SIZE = 10
 EPOCHS = 100
 
@@ -91,6 +91,9 @@ with h5py.File(encoder_dataset_path, 'r') as enc:
     BATCH_COUNT = 0
     for i in range(0, NUM_IMAGES - BATCH_SIZE, BATCH_SIZE):
         BATCH_COUNT += 1
+
+#Segmented batch is to get portion of data in the discriminator training step
+SEG_BATCH_SIZE = math.floor(BATCH_SIZE/(DISC_STEPS*2))
 
 bynary_permute = np.concatenate((np.repeat(np.array([0]), math.floor(BATCH_SIZE/2)), np.repeat(np.array([1]), math.floor(BATCH_SIZE/2))))
 
@@ -196,7 +199,7 @@ class WGAN(keras.Model):
         and added to the discriminator loss.
         """
         # Get the interpolated image
-        alpha = tf.random.uniform([math.floor(BATCH_SIZE/self.d_steps), 1, 1, 1], 0.0, 1.0)
+        alpha = tf.random.uniform([SEG_BATCH_SIZE, 1, 1, 1], 0.0, 1.0)
         diff = fake_images - real_images
         interpolated = real_images + alpha * diff
 
@@ -236,16 +239,16 @@ class WGAN(keras.Model):
             # emb_segbatch = fake_embeddings[s*math.floor(BATCH_SIZE/self.d_steps):(s+1)*math.floor(BATCH_SIZE/self.d_steps), :, :, :]
             with tf.GradientTape() as tape:
                 # Generate fake images from the latent vector
-                fake_images = self.generator(fake_embeddings[s*math.floor(BATCH_SIZE/self.d_steps):(s+1)*math.floor(BATCH_SIZE/self.d_steps), :, :, :], training=True)
+                fake_images = self.generator(fake_embeddings[s*SEG_BATCH_SIZE:(s+1)*SEG_BATCH_SIZE, :, :, :], training=True)
                 # Get the logits for the fake images
                 fake_logits = self.discriminator(fake_images, training=True)
                 # Get the logits for the real images
-                real_logits = self.discriminator(real_images[s*math.floor(BATCH_SIZE/self.d_steps):(s+1)*math.floor(BATCH_SIZE/self.d_steps), :, :, :], training=True)
+                real_logits = self.discriminator(real_images[s*SEG_BATCH_SIZE:(s+1)*SEG_BATCH_SIZE, :, :, :], training=True)
 
                 # Calculate the discriminator loss using the fake and real image logits
                 d_cost = self.d_loss_fn(real_img=real_logits, fake_img=fake_logits)
                 # Calculate the gradient penalty
-                gp = self.gradient_penalty(self.batch_size, real_images[s*math.floor(BATCH_SIZE/self.d_steps):(s+1)*math.floor(BATCH_SIZE/self.d_steps), :, :, :], fake_images)
+                gp = self.gradient_penalty(self.batch_size, real_images[s*SEG_BATCH_SIZE:(s+1)*SEG_BATCH_SIZE, :, :, :], fake_images)
                 # Add the gradient penalty to the original discriminator loss
                 d_loss = d_cost + gp * self.gp_weight
 
@@ -260,13 +263,13 @@ class WGAN(keras.Model):
         # Get the latent vector
         with tf.GradientTape() as tape:
             # Generate fake images using the generator
-            generated_images = self.generator(fake_embeddings, training=True)
+            generated_images = self.generator(fake_embeddings[0:SEG_BATCH_SIZE, :, :, :], training=True)
             # Get the discriminator logits for fake images
             gen_img_logits = self.discriminator(generated_images, training=True)
             # Calculate the generator loss
             g_loss = tf.constant(WEIGHT_GAN_LOSS)*self.g_loss_fn(gen_img_logits) \
-                     + tf.constant(WEIGHT_REC_LOSS)*utils.euclidean_distance_loss(fake_images_reconstruction_targets, generated_images) \
-                     + tf.constant(WEIGHT_DSIM_LOSS)*deep_sim_loss(generated_images, fake_embeddings)
+                     + tf.constant(WEIGHT_REC_LOSS)*utils.euclidean_distance_loss(fake_images_reconstruction_targets[0:SEG_BATCH_SIZE, :, :, :], generated_images) \
+                     + tf.constant(WEIGHT_DSIM_LOSS)*deep_sim_loss(generated_images, fake_embeddings[0:SEG_BATCH_SIZE, :, :, :])
 
         # Get the gradients w.r.t the generator loss
         gen_gradient = tape.gradient(g_loss, self.generator.trainable_variables)
@@ -296,7 +299,7 @@ wgan.compile(
 )
 
 # Start training the model.
-wgan.fit(ds_counter, batch_size=BATCH_SIZE, epochs=EPOCHS, steps_per_epoch=math.floor(NUM_IMAGES/BATCH_SIZE))
+wgan.fit(ds_counter, batch_size=1, epochs=EPOCHS, steps_per_epoch=math.floor(NUM_IMAGES/BATCH_SIZE))
 
 decoder.save(os.path.join(basepath, "../models/decoder_wgan_gp"))
 discriminator.save(os.path.join(basepath, "../models/discriminator_wgan_gp"))
