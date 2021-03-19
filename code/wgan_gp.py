@@ -28,12 +28,12 @@ TEST_CONFIG = False
 if TEST_CONFIG:
     BATCH_SIZE = 4
 else:
-    BATCH_SIZE = 32
+    BATCH_SIZE = 48  # 64
 BUFFER_SIZE = 10
 EPOCHS = 100
 
 LEARN_RATE_DEC = 1e-4
-LEARN_RATE_DISC = 2e-4
+LEARN_RATE_DISC = 1e-4
 BETA1_DEC = 0.5
 BETA1_DISC = 0.5
 BETA2_DEC = 0.9
@@ -41,14 +41,14 @@ BETA2_DISC = 0.9
 
 START_PRETRAINED = True
 
-WEIGHT_GAN_LOSS = 1.0
-WEIGHT_REC_LOSS = 10.0
-WEIGHT_DSIM_LOSS = 1.0
+WEIGHT_GAN_LOSS = 0.8
+WEIGHT_REC_LOSS = 0.1
+WEIGHT_DSIM_LOSS = 0.1
 
 WEIGHT_GP = 10.0
-DISC_STEPS = 1
+DISC_STEPS = 4
 
-GPU_ID = 1
+GPU_ID = 0
 
 TRAIN_DISC_LOWER_THRESH = 0.01  # minimum 0.0
 TRAIN_DEC_UPPER_THRESH = 0.2  # maximum 2.0
@@ -232,13 +232,15 @@ class WGAN(keras.Model):
         # one step of the generator. Here we will train it for 3 extra steps
         # as compared to 5 to reduce the training time.
         for s in range(self.d_steps):
+            # real_segbatch = real_images[s*math.floor(BATCH_SIZE/self.d_steps):(s+1)*math.floor(BATCH_SIZE/self.d_steps), :, :, :]
+            # emb_segbatch = fake_embeddings[s*math.floor(BATCH_SIZE/self.d_steps):(s+1)*math.floor(BATCH_SIZE/self.d_steps), :, :, :]
             with tf.GradientTape() as tape:
                 # Generate fake images from the latent vector
-                fake_images = self.generator(fake_embeddings, training=True)
+                fake_images = self.generator(fake_embeddings[s*math.floor(BATCH_SIZE/self.d_steps):(s+1)*math.floor(BATCH_SIZE/self.d_steps), :, :, :], training=True)
                 # Get the logits for the fake images
                 fake_logits = self.discriminator(fake_images, training=True)
                 # Get the logits for the real images
-                real_logits = self.discriminator(real_images, training=True)
+                real_logits = self.discriminator(real_images[s*math.floor(BATCH_SIZE/self.d_steps):(s+1)*math.floor(BATCH_SIZE/self.d_steps), :, :, :], training=True)
 
                 # Calculate the discriminator loss using the fake and real image logits
                 d_cost = self.d_loss_fn(real_img=real_logits, fake_img=fake_logits)
