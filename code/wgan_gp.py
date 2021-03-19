@@ -196,7 +196,7 @@ class WGAN(keras.Model):
         and added to the discriminator loss.
         """
         # Get the interpolated image
-        alpha = tf.random.uniform([math.floor(batch_size / 2), 1, 1, 1], 0.0, 1.0)
+        alpha = tf.random.uniform([math.floor(BATCH_SIZE/self.d_steps), 1, 1, 1], 0.0, 1.0)
         diff = fake_images - real_images
         interpolated = real_images + alpha * diff
 
