@@ -21,6 +21,7 @@ import tensorflow as tf
 import random
 import math
 import wandb
+import socket
 
 TEST_CONFIG = True
 
@@ -30,20 +31,29 @@ if TEST_CONFIG:
 else:
     BATCH_SIZE = 64
 BUFFER_SIZE = 10
-EPOCHS = 200
+EPOCHS = 100
 
 LEARN_RATE_DEC = 1e-4
 LEARN_RATE_DISC = 1e-4
-BETA1_DISC = 0.9
+BETA1_DEC = 0.5
+BETA1_DISC = 0.5
+BETA2_DEC = 0.9
+BETA2_DISC = 0.9
 
 START_PRETRAINED = False
 
-WEIGHT_GAN_LOSS = 0.99
-WEIGHT_REC_LOSS = 0.01
-WEIGHT_DSIM_LOSS = 0.01
+WEIGHT_GAN_LOSS = 0.4
+WEIGHT_REC_LOSS = 0.2
+WEIGHT_DSIM_LOSS = 0.4
 
-TRAIN_DISC_LOWER_THRESH = 0.01  # minimum 0.0
-TRAIN_DEC_UPPER_THRESH = 0.2  # maximum 2.0
+host = socket.gethostname()
+if TEST_CONFIG or host == "piggypiggy":
+    GPU_ID = 0
+else:
+    GPU_ID = 1
+
+TRAIN_DISC_LOWER_THRESH = -6  # minimum -inf
+TRAIN_DEC_UPPER_THRESH = 6  # maximum +inf
 
 DISC_MODEL = "(conv stride 2>conv stride 1>batchnorm)*4>globAvPool>sigmoid  filters 64 64 128 128 256 256 512 512\n" \
              "always training both disc and dec"
@@ -60,6 +70,9 @@ if not TEST_CONFIG:
                         "disc_model_info": DISC_MODEL})
 # ----------------------------------------------------------------------------------------------------------------------
 
+if not TEST_CONFIG:
+    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(GPU_ID)  # Use Titan XP on monkey, set to 0 in piggy
 physical_devices = tf.config.list_physical_devices('GPU')
 
 for h in physical_devices:
@@ -129,13 +142,24 @@ classifier = keras.models.load_model(classifierpath, custom_objects={"bp_mll_los
 encoder = keras.Model(classifier.input, classifier.get_layer("global_average_pooling2d").input)
 discriminator = utils.make_discriminator_model()
 
-decoder_optimizer = tf.keras.optimizers.Adam(LEARN_RATE_DEC)
-discriminator_optimizer = tf.keras.optimizers.Adam(learning_rate=LEARN_RATE_DISC, beta_1=BETA1_DISC)
+decoder_optimizer = tf.keras.optimizers.Adam(learning_rate=LEARN_RATE_DEC, beta_1=BETA1_DEC, beta_2=BETA2_DEC)
+discriminator_optimizer = tf.keras.optimizers.Adam(learning_rate=LEARN_RATE_DISC, beta_1=BETA1_DISC, beta_2=BETA2_DISC)
 
 
 def deep_sim_loss(images, y_pred):
     y_true = encoder(images, training=False)
-    return K.sum(K.square(y_pred - y_true), axis=(1, 2, 3))
+    return tf.reduce_mean(K.square(y_pred - y_true))
+
+
+def wgan_discriminator_loss(real_img, fake_img):
+    real_loss = tf.reduce_mean(real_img)
+    fake_loss = tf.reduce_mean(fake_img)
+    return fake_loss - real_loss
+
+
+# Define the loss functions for the generator.
+def wgan_generator_loss(fake_img):
+    return -tf.reduce_mean(fake_img)
 
 
 @tf.function
@@ -151,21 +175,23 @@ def train_step(batch):
         real_output = discriminator(real_images, training=True)
         fake_output = discriminator(generated_images, training=True)
 
-        dec_loss = tf.constant(WEIGHT_GAN_LOSS)*utils.generator_loss(fake_output) # + tf.constant(WEIGHT_REC_LOSS)*tf.norm(utils.euclidean_distance_loss(fake_images, generated_images)) + tf.constant(WEIGHT_DSIM_LOSS)*tf.norm(deep_sim_loss(generated_images, fake_embeddings))
-        disc_loss = utils.discriminator_loss(real_output, fake_output)
-        disc_loss_nolog = utils.discriminator_loss_nolog(real_output, fake_output)
+        dec_loss = tf.constant(WEIGHT_GAN_LOSS)*wgan_generator_loss(fake_output) \
+                   + tf.constant(WEIGHT_REC_LOSS)*utils.euclidean_distance_loss(fake_images, generated_images) \
+                   + tf.constant(WEIGHT_DSIM_LOSS)*deep_sim_loss(generated_images, fake_embeddings)
+        disc_loss = wgan_discriminator_loss(real_output, fake_output)
+        # disc_loss_nolog = utils.discriminator_loss_nolog(real_output, fake_output)
 
     gradients_of_decoder = gen_tape.gradient(dec_loss, decoder.trainable_variables)
     gradients_of_discriminator = disc_tape.gradient(disc_loss, discriminator.trainable_variables)
 
-    tf.print(zip(gradients_of_discriminator, discriminator.trainable_variables))
-    tf.print(zip(gradients_of_discriminator, discriminator.trainable_variables))
-    #if tf.math.less_equal(disc_loss_nolog, tf.constant(TRAIN_DEC_UPPER_THRESH)):
-    decoder_optimizer.apply_gradients(zip(gradients_of_decoder, decoder.trainable_variables))
+    # tf.print(zip(gradients_of_discriminator, discriminator.trainable_variables))
+    # tf.print(zip(gradients_of_discriminator, discriminator.trainable_variables))
+    if tf.math.less_equal(disc_loss, tf.constant(TRAIN_DEC_UPPER_THRESH)):
+        decoder_optimizer.apply_gradients(zip(gradients_of_decoder, decoder.trainable_variables))
 
     # Train discriminator only if its loss is greater than value (previously 0.35)
-    #if tf.math.greater(disc_loss_nolog, tf.constant(TRAIN_DISC_LOWER_THRESH)):
-    discriminator_optimizer.apply_gradients(zip(gradients_of_discriminator, discriminator.trainable_variables))
+    if tf.math.greater(disc_loss, tf.constant(TRAIN_DISC_LOWER_THRESH)):
+        discriminator_optimizer.apply_gradients(zip(gradients_of_discriminator, discriminator.trainable_variables))
 
 
 for epoch in range(EPOCHS):
@@ -197,8 +223,8 @@ for epoch in range(EPOCHS):
     real_test_output = discriminator(Y_test[0:100, :, :, :], training=False)
     fake_test_output = discriminator(generated_test_images, training=False)
 
-    dec_loss = np.mean(utils.euclidean_distance_loss(generated_test_images, Y_test[0:100, :, :, :]))
-    disc_loss = utils.discriminator_loss_nolog(real_test_output, fake_test_output)
+    dec_loss = utils.euclidean_distance_loss(generated_test_images, Y_test[0:100, :, :, :])
+    disc_loss = wgan_discriminator_loss(real_test_output, fake_test_output)
 
     wandb.log({"epoch": epoch})
     if TEST_CONFIG:
