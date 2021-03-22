@@ -23,7 +23,7 @@ import math
 import wandb
 import socket
 
-TEST_CONFIG = True
+TEST_CONFIG = False
 
 # ----------------------------------------------------------------------------------------------------------WANDB PARAMS
 if TEST_CONFIG:
@@ -52,8 +52,8 @@ if TEST_CONFIG or host == "piggypiggy":
 else:
     GPU_ID = 1
 
-TRAIN_DISC_LOWER_THRESH = -6  # minimum -inf
-TRAIN_DEC_UPPER_THRESH = 6  # maximum +inf
+TRAIN_DISC_LOWER_THRESH = -6.0  # minimum -inf
+TRAIN_DEC_UPPER_THRESH = 6.0  # maximum +inf
 
 DISC_MODEL = "(conv stride 2>conv stride 1>batchnorm)*4>globAvPool>sigmoid  filters 64 64 128 128 256 256 512 512\n" \
              "always training both disc and dec"
