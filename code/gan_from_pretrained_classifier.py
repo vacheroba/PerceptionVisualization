@@ -31,7 +31,7 @@ if TEST_CONFIG:
 else:
     BATCH_SIZE = 64
 BUFFER_SIZE = 10
-EPOCHS = 100
+EPOCHS = 200
 
 LEARN_RATE_DEC = 1e-4
 LEARN_RATE_DISC = 1e-4
@@ -40,7 +40,7 @@ BETA1_DISC = 0.5
 BETA2_DEC = 0.9
 BETA2_DISC = 0.9
 
-START_PRETRAINED = False
+START_PRETRAINED = True
 
 WEIGHT_GAN_LOSS = 0.4
 WEIGHT_REC_LOSS = 0.2
@@ -52,8 +52,8 @@ if TEST_CONFIG or host == "piggypiggy":
 else:
     GPU_ID = 1
 
-TRAIN_DISC_LOWER_THRESH = -6.0  # minimum -inf
-TRAIN_DEC_UPPER_THRESH = 6.0  # maximum +inf
+TRAIN_DISC_LOWER_THRESH = -3.0  # minimum -inf
+TRAIN_DEC_UPPER_THRESH = 3.0  # maximum +inf
 
 DISC_MODEL = "(conv stride 2>conv stride 1>batchnorm)*4>globAvPool>sigmoid  filters 64 64 128 128 256 256 512 512\n" \
              "always training both disc and dec"
