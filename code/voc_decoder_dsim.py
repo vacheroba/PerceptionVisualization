@@ -98,7 +98,7 @@ callback = tf.keras.callbacks.EarlyStopping(monitor='val_euclidean_distance_loss
 # model.fit(ds_counter, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, steps_per_epoch=math.floor(NUM_IMAGES/BATCH_SIZE), callbacks=[callback], validation_data=(E_test, Y_test))
 model.fit(ds_counter, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, steps_per_epoch=math.floor(NUM_IMAGES/BATCH_SIZE))
 
-modelpath = os.path.join(basepath, "../models/decoder_leaky")
+modelpath = os.path.join(basepath, "../models/decoder_dsim")
 model.save(modelpath)
 
 preds = model.evaluate(E_test, Y_test)
