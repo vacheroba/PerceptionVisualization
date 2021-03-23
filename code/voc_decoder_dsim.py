@@ -120,6 +120,8 @@ else:
 classifier = keras.models.load_model(classifierpath, custom_objects={"bp_mll_loss": bp_mll_loss, "euclidean_distance_loss": utils.euclidean_distance_loss})
 encoder = keras.Model(classifier.input, classifier.get_layer("global_average_pooling2d").input)
 
+del classifier
+
 decoder_optimizer = tf.keras.optimizers.Adam(learning_rate=LEARN_RATE_DEC, beta_1=BETA1_DEC, beta_2=BETA2_DEC)
 
 def deep_sim_loss(images, y_pred):
