@@ -165,14 +165,14 @@ class DSIM_MODEL(keras.Model):
         return {"g_loss": g_loss}
 
 
-# Instantiate the WGAN model.
+# Instantiate the DSIM model.
 dsim_model = DSIM_MODEL(
-    enc=classifier,
+    enc=encoder,
     dec=decoder,
     latent_dim=[7, 7, 2048]
 )
 
-# Compile the WGAN model.
+# Compile the DSIM model.
 dsim_model.compile(
     g_optimizer=decoder_optimizer
 )

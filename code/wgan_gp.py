@@ -42,9 +42,9 @@ BETA2_DISC = 0.9
 
 START_PRETRAINED = False
 
-WEIGHT_GAN_LOSS = 1.0
-WEIGHT_REC_LOSS = 0.0
-WEIGHT_DSIM_LOSS = 0.0
+WEIGHT_GAN_LOSS = 0.33
+WEIGHT_REC_LOSS = 0.33
+WEIGHT_DSIM_LOSS = 0.33
 
 WEIGHT_GP = 10.0
 DISC_STEPS = 4
@@ -287,7 +287,7 @@ class WGAN(keras.Model):
 
 # Instantiate the WGAN model.
 wgan = WGAN(
-    enc=classifier,
+    enc=encoder,
     disc=discriminator,
     dec=decoder,
     latent_dim=[7, 7, 2048],
