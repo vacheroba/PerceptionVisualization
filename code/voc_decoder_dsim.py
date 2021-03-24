@@ -29,9 +29,9 @@ TEST_CONFIG = False
 if TEST_CONFIG:
     BATCH_SIZE = 4  # 4
 else:
-    BATCH_SIZE = 64  # 64
+    BATCH_SIZE = 32  # 64
 BUFFER_SIZE = 10
-EPOCHS = 100
+EPOCHS = 500
 
 LEARN_RATE_DEC = 1e-4
 LEARN_RATE_DISC = 1e-4
@@ -40,7 +40,7 @@ BETA1_DISC = 0.9
 BETA2_DEC = 0.999
 BETA2_DISC = 0.999
 
-START_PRETRAINED = False
+START_PRETRAINED = True
 
 WEIGHT_REC_LOSS = 0.5
 WEIGHT_DSIM_LOSS = 0.5
@@ -178,7 +178,8 @@ dsim_model.compile(
 )
 
 # Start training the model.
-dsim_model.fit(ds_counter, batch_size=1, epochs=EPOCHS, steps_per_epoch=math.floor(NUM_IMAGES/BATCH_SIZE))
+callback = tf.keras.callbacks.EarlyStopping(monitor='g_loss', patience=100, restore_best_weights=False)
+dsim_model.fit(ds_counter, batch_size=1, epochs=EPOCHS, steps_per_epoch=math.floor(NUM_IMAGES/BATCH_SIZE), callbacks=[callback])
 
 decoder.save(os.path.join(basepath, "../models/decoder_dsim"))
 
