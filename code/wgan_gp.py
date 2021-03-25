@@ -29,7 +29,7 @@ TEST_CONFIG = False
 if TEST_CONFIG:
     BATCH_SIZE = 16  # 4
 else:
-    BATCH_SIZE = 256  # 64
+    BATCH_SIZE = 128  # 64
 BUFFER_SIZE = 10
 EPOCHS = 100
 
