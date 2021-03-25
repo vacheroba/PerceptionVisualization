@@ -140,8 +140,8 @@ physical_devices = tf.config.list_physical_devices('GPU')
 tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 basepath = os.getcwd()
-decoder_path = os.path.join(basepath, "../models/decoder_wgan_gp")
-decoder_ssim_path = os.path.join(basepath, "../models/decoder_ssim")
+decoder_path = os.path.join(basepath, "../models/decoder_ssim")
+decoder_ssim_path = os.path.join(basepath, "../models/decoder_dsim")
 # decoder_ssim_path = os.path.join(basepath, "../models/decoder_gan_Experiment3(good)")
 classifier_path = os.path.join(basepath, "../models/classifier")
 main_dataset_path = os.path.join(basepath, "../datasets/dataset.h5")
@@ -175,9 +175,9 @@ root.geometry('900x800')
 canvas = tkinter.Canvas(root, width=896, height=800)
 canvas.pack()
 
-def viz_and_save():
+def viz_and_save(idx):
     # infofile = open(os.path.join(basepath, "../images/info.txt"), 'w')
-    for i in range(0, 250):
+    for i in idx:
         reconstructed = ((decoder.predict(E_test[i:i+1, :, :, :]))*255).squeeze().astype(np.uint8)
         reconstructed_ssim = ((decoder_ssim.predict(E_test[i:i+1, :, :, :]))*255).squeeze().astype(np.uint8)
         original = (X_test[i:i+1, :, :, :]*255).squeeze().astype(np.uint8)
@@ -191,6 +191,14 @@ def viz_and_save():
         t = (heatmap.astype(np.float32)/255.0)*0.3
         multi_map = np.concatenate((t, t, t, t), axis=1)
         multi_map = multi_map + 0.7*(res.astype(np.float32)/255.0)
+
+        # Use colour gamma
+        # raw_heatmap = raw_heatmap**(2/3)
+
+        # Threshold
+        # threshold = 0.3
+        # raw_heatmap[raw_heatmap > threshold] = 1.0
+        # raw_heatmap[raw_heatmap <= threshold] = 0.0
 
         mask = np.concatenate((raw_heatmap, raw_heatmap, raw_heatmap, raw_heatmap), axis=1)  # This is the heatmap scaled 0...1
         masked_map = (res.astype(np.float32)/255.0)  # This is a copy of the full row
@@ -248,11 +256,11 @@ def viz_and_save():
             masked_recon.save(os.path.join(basepath, "../images/viz/"+str(i)+".jpg"))
             original_cam.save(os.path.join(basepath, "../images/original+cam/"+str(i)+".jpg"))
             original_viz.save(os.path.join(basepath, "../images/original+viz/"+str(i)+".jpg"))
-            infofile.writelines([str(i)+"; "+str(correct)+"; "+str(accepted)+"\n"])
+            # infofile.writelines([str(i)+"; "+str(correct)+"; "+str(accepted)+"\n"])
         if sv == "q":
-            infofile.close()
+            # infofile.close()
             exit()
-    infofile.close()
+    # infofile.close()
 
 
 def info_perm():
@@ -288,7 +296,12 @@ def info_perm():
 
 
 if __name__ == "__main__":
-    viz_and_save()
+    rand_perm = np.array(
+        [38, 72, 12, 42, 65, 15, 0, 10, 45, 95, 58, 62, 3, 61, 90, 35, 18, 36, 107, 101, 13, 53, 21, 26, 9, 59, 41, 60,
+         93, 33])
+
+    viz_and_save(rand_perm)
+    #viz_and_save(range(0, 250))
 
 
 

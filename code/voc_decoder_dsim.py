@@ -31,7 +31,7 @@ if TEST_CONFIG:
 else:
     BATCH_SIZE = 32  # 64
 BUFFER_SIZE = 10
-EPOCHS = 500
+EPOCHS = 100
 
 LEARN_RATE_DEC = 1e-4
 LEARN_RATE_DISC = 1e-4
@@ -42,8 +42,9 @@ BETA2_DISC = 0.999
 
 START_PRETRAINED = True
 
-WEIGHT_REC_LOSS = 0.5
-WEIGHT_DSIM_LOSS = 0.5
+WEIGHT_REC_LOSS = 0.2
+WEIGHT_DSIM_LOSS = 0.6
+WEIGHT_SSIM_LOSS = 0.2
 
 host = socket.gethostname()
 if TEST_CONFIG or host == "piggypiggy":
@@ -153,7 +154,9 @@ class DSIM_MODEL(keras.Model):
             generated_images = self.generator(embeddings[0:BATCH_SIZE, :, :, :], training=True)
             # Calculate the generator loss
             g_loss = tf.constant(WEIGHT_REC_LOSS)*utils.euclidean_distance_loss(images[0:BATCH_SIZE, :, :, :], generated_images) \
-                     + tf.constant(WEIGHT_DSIM_LOSS)*deep_sim_loss(generated_images, embeddings[0:BATCH_SIZE, :, :, :])
+                     + tf.constant(WEIGHT_DSIM_LOSS)*deep_sim_loss(generated_images, embeddings[0:BATCH_SIZE, :, :, :])\
+                     + tf.constant(WEIGHT_SSIM_LOSS)*utils.rgb_ssim_loss(generated_images, embeddings[0:BATCH_SIZE, :, :, :])
+
 
         # Get the gradients w.r.t the generator loss
         gen_gradient = tape.gradient(g_loss, self.generator.trainable_variables)
