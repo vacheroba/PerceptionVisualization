@@ -155,7 +155,7 @@ class DSIM_MODEL(keras.Model):
             # Calculate the generator loss
             g_loss = tf.constant(WEIGHT_REC_LOSS)*utils.euclidean_distance_loss(images[0:BATCH_SIZE, :, :, :], generated_images) \
                      + tf.constant(WEIGHT_DSIM_LOSS)*deep_sim_loss(generated_images, embeddings[0:BATCH_SIZE, :, :, :])\
-                     + tf.constant(WEIGHT_SSIM_LOSS)*utils.rgb_ssim_loss(generated_images, embeddings[0:BATCH_SIZE, :, :, :])
+                     + tf.constant(WEIGHT_SSIM_LOSS)*utils.rgb_ssim_loss(generated_images, images[0:BATCH_SIZE, :, :, :])
 
 
         # Get the gradients w.r.t the generator loss
