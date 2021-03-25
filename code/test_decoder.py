@@ -140,7 +140,7 @@ physical_devices = tf.config.list_physical_devices('GPU')
 tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 basepath = os.getcwd()
-decoder_path = os.path.join(basepath, "../models/decoder_ssim")
+decoder_path = os.path.join(basepath, "../models/decoder_gan_Experiment3(good)")
 decoder_ssim_path = os.path.join(basepath, "../models/decoder_dsim")
 # decoder_ssim_path = os.path.join(basepath, "../models/decoder_gan_Experiment3(good)")
 classifier_path = os.path.join(basepath, "../models/classifier")
