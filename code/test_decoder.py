@@ -13,7 +13,7 @@ from keras import metrics
 from keras import losses
 from keras.models import Sequential
 import keras.backend as K
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 from PIL import ImageTk, ImageWin
 import tkinter
 import keras
@@ -140,7 +140,7 @@ physical_devices = tf.config.list_physical_devices('GPU')
 tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 basepath = os.getcwd()
-decoder_path = os.path.join(basepath, "../models/decoder_dsim_0.8dsim_0rec_0.2ssim")
+decoder_path = os.path.join(basepath, "../models/decoder_dsim_250_0.4dsim_0.2rec_0.4ssim")
 decoder_ssim_path = os.path.join(basepath, "../models/decoder_ssim")
 # decoder_ssim_path = os.path.join(basepath, "../models/decoder_gan_Experiment3(good)")
 classifier_path = os.path.join(basepath, "../models/classifier")
@@ -177,6 +177,9 @@ canvas.pack()
 
 def viz_and_save(idx):
     # infofile = open(os.path.join(basepath, "../images/info.txt"), 'w')
+    labelsfile = open(os.path.join(basepath, "../images/labels.txt"), 'w')
+    predictionsfile = open(os.path.join(basepath, "../images/predictions.txt"), 'w')
+    explainedfile = open(os.path.join(basepath, "../images/explained.txt"), 'w')
     for i in idx:
         reconstructed = ((decoder.predict(E_test[i:i+1, :, :, :]))*255).squeeze().astype(np.uint8)
         reconstructed_ssim = ((decoder_ssim.predict(E_test[i:i+1, :, :, :]))*255).squeeze().astype(np.uint8)
@@ -215,11 +218,16 @@ def viz_and_save(idx):
         target = Y_test[i, :]
 
         print("Targets")
+        labelline = ""
+        predline = ""
+        expline = ""
+
         correct = []
         count = 0
         for elem in importdataset.CLASS_NAMES:
             if target[count] > 0.1:
                 correct.append((elem, target[count]))
+                labelline += str(elem) + ", "
             count += 1
         print(correct)
 
@@ -231,36 +239,64 @@ def viz_and_save(idx):
         for elem in importdataset.CLASS_NAMES:
             if classes[count] > 0.5:
                 accepted.append((elem, classes[count]))
+                predline += str(elem) + ", "
             count += 1
         argmax = classes.argmax()
         accepted.append(("TOP: "+importdataset.CLASS_NAMES[argmax], classes[argmax]))
+        expline = importdataset.CLASS_NAMES[argmax]
         image = Image.fromarray(res)
         photoimage = ImageTk.PhotoImage(image)
         imagesprite = canvas.create_image(0, 0, image=photoimage, anchor="nw")
         root.update()
         print(accepted)
-        sv = input("Any key to continue")
-        if sv == "s":
-            original = res[0:224, 0:224, :]
-            masked_original = res[448:, 0:224, :]
-            masked_recon = res[448:, 448:672, :]
+        #sv = input("Any key to continue")
+        sv = "ehwjrejrejtejt"
 
-            original_cam = Image.fromarray(np.concatenate((original, masked_original), axis=1))
-            original_viz = Image.fromarray(np.concatenate((original, masked_recon), axis=1))
-            original = Image.fromarray(original)
-            masked_original = Image.fromarray(masked_original)
-            masked_recon = Image.fromarray(masked_recon)
+        predline = predline[:-2]+"\n"
+        labelline = labelline[:-2] + "\n"
+        expline = expline + "\n"
 
-            original.save(os.path.join(basepath, "../images/original/"+str(i)+".jpg"))
-            masked_original.save(os.path.join(basepath, "../images/cam/"+str(i)+".jpg"))
-            masked_recon.save(os.path.join(basepath, "../images/viz/"+str(i)+".jpg"))
-            original_cam.save(os.path.join(basepath, "../images/original+cam/"+str(i)+".jpg"))
-            original_viz.save(os.path.join(basepath, "../images/original+viz/"+str(i)+".jpg"))
+        predictionsfile.writelines(predline)
+        labelsfile.writelines(labelline)
+        explainedfile.writelines(expline)
+
+        original = res[0:224, 0:224, :]
+        cammask = res[448:672, 0:224, :]
+        mask_1 = res[448:672, 224:448, :]
+        mask_2 = res[448:672, 448:672, :]
+
+        opt1 = Image.fromarray(np.concatenate((original, cammask, mask_1), axis=1))
+        opt2 = Image.fromarray(np.concatenate((original, cammask, mask_2), axis=1))
+
+        if sv == "1":
+            opt1.save(os.path.join(basepath, "../images/" + str(i) + ".jpg"))
+
+        if sv == "2":
+            opt2.save(os.path.join(basepath, "../images/" + str(i) + ".jpg"))
+
+            #original = res[0:224, 0:224, :]
+            #masked_original = res[448:, 0:224, :]
+            #masked_recon = res[448:, 448:672, :]
+
+            #original_cam = Image.fromarray(np.concatenate((original, masked_original), axis=1))
+            #original_viz = Image.fromarray(np.concatenate((original, masked_recon), axis=1))
+            #original = Image.fromarray(original)
+            #masked_original = Image.fromarray(masked_original)
+            #masked_recon = Image.fromarray(masked_recon)
+
+            #original.save(os.path.join(basepath, "../images/original/"+str(i)+".jpg"))
+            #masked_original.save(os.path.join(basepath, "../images/cam/"+str(i)+".jpg"))
+            #masked_recon.save(os.path.join(basepath, "../images/viz/"+str(i)+".jpg"))
+            #original_cam.save(os.path.join(basepath, "../images/original+cam/"+str(i)+".jpg"))
+            #original_viz.save(os.path.join(basepath, "../images/original+viz/"+str(i)+".jpg"))
             # infofile.writelines([str(i)+"; "+str(correct)+"; "+str(accepted)+"\n"])
         if sv == "q":
             # infofile.close()
             exit()
     # infofile.close()
+    predictionsfile.close()
+    explainedfile.close()
+    labelsfile.close()
 
 
 def info_perm():
@@ -295,14 +331,70 @@ def info_perm():
     infofile.close()
 
 
+def create_additional_viz(idxs):
+    participants_cam = 58
+    participants_pv = 40
+
+    data_cam = [57, 0, 3, 10, 0, 58, 47, 58, 13, 1, 57, 58, 58, 3, 12, 0, 58, 57, 3, 17, 58, 58, 58, 58, 58, 1, 2, 54, 1, 4]
+    data_pv = [33, 10, 36, 30, 3, 32, 34, 29, 13, 13, 29, 27, 25, 17, 31, 1, 38, 32, 17, 31, 19, 38, 28, 41, 28, 4, 15, 30, 5, 7]
+
+    optionsfile = open(os.path.join(basepath, "../images/options.txt"), 'r')
+    labelsfile = open(os.path.join(basepath, "../images/labels.txt"), 'r')
+    predictionsfile = open(os.path.join(basepath, "../images/predictions.txt"), 'r')
+    explainedfile = open(os.path.join(basepath, "../images/explained.txt"), 'r')
+
+    optionlines = optionsfile.readlines()
+    labelslines = labelsfile.readlines()
+    predictionlines = predictionsfile.readlines()
+    explainedlines = explainedfile.readlines()
+
+    font = ImageFont.truetype(os.path.join(basepath, "../Gidole-Regular.ttf"), size=15)
+
+    count = 0
+    for idx in idxs:
+        labels = labelslines[count]
+        predictions = predictionlines[count]
+        explained = explainedlines[count].replace('\n', '')
+
+        options = optionlines[count].replace('}', '').replace('{', '').replace('\n', '').replace("'", '')
+        options = "Possible answers: " + options + ", 'I just can't tell'  (Correct answer: "+ explained + ")"
+
+        resultimage = Image.new('RGB', (672+75, 224+100), (255, 255, 255, 255))
+        vizimage = Image.open(os.path.join(basepath, "../images/"+str(idx)+".jpg"))
+        predimage = Image.new('RGB', (224, 75), (255, 255, 255, 255))
+        d = ImageDraw.Draw(predimage)
+        d.text((10, 10), "Target:\nPredicted:\nExplained:", fill=(0, 0, 0), font=font)
+        d.text((100, 10), labels + predictions + explained, fill=(0, 0, 0), font=font)
+        predimage = predimage.rotate(270, expand=True)
+        optionsimage = Image.new('RGB', (672, 50), (255, 255, 255, 255))
+        d = ImageDraw.Draw(optionsimage)
+        d.text((10, 10), options, fill=(0, 0, 0), font=font)
+        perfimage = Image.new('RGB', (672, 60), (255, 255, 255, 255))
+        d = ImageDraw.Draw(perfimage)
+        d.text((10, 10), "Grad-CAM users that correctly guessed: ", fill=(0, 0, 0), font=font)
+        d.text((10, 35), "PV users that correctly guessed: ", fill=(0, 0, 0), font=font)
+        d.text((260, 10), str(data_cam[count])+"/"+str(participants_cam) + " ("+str(round(float(data_cam[count])/float(participants_cam)*float(100), 2))+"%)", fill=(0, 0, 0), font=font)
+        d.text((260, 35), str(data_pv[count])+"/"+str(participants_pv) + " ("+str(round(float(data_pv[count])/float(participants_pv)*float(100), 2))+"%)", fill=(0, 0, 0), font=font)
+
+        resultimage.paste(vizimage, (0, 0))
+        resultimage.paste(predimage, (672, 0))
+        resultimage.paste(optionsimage, (0, 224))
+        resultimage.paste(perfimage, (0, 259))
+
+        resultimage.save(os.path.join(basepath, "../additionalmat/"+str(count)+".jpg"))
+        count += 1
+
+
+
 if __name__ == "__main__":
     rand_perm = np.array(
         [38, 72, 12, 42, 65, 15, 0, 10, 45, 95, 58, 62, 3, 61, 90, 35, 18, 36, 107, 101, 13, 53, 21, 26, 9, 59, 41, 60,
          93, 33])
 
-    viz_and_save(rand_perm)
-    #viz_and_save(range(0, 250))
+    #viz_and_save(rand_perm)
+    viz_and_save(range(801, 1000))
 
+    # create_additional_viz(rand_perm)
 
 
 

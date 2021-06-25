@@ -7,8 +7,11 @@ wrong = np.array([33, 35, 36, 41, 42, 45, 59, 61, 65, 72, 90, 93, 95, 101, 107])
 
 
 def save_random_perm():
-    idx = np.concatenate((correct, wrong))
-    idx = np.random.permutation(idx)
+    # idx = np.concatenate((correct, wrong))
+    # idx = np.random.permutation(idx)
+    idx = np.array(
+        [38, 72, 12, 42, 65, 15, 0, 10, 45, 95, 58, 62, 3, 61, 90, 35, 18, 36, 107, 101, 13, 53, 21, 26, 9, 59, 41, 60,
+         93, 33])
     print(idx)
 
     basepath = os.getcwd()
@@ -23,4 +26,6 @@ def save_random_perm():
         count += 1
 
 
+if __name__ == "__main__":
+    save_random_perm()
 
