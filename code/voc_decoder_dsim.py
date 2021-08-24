@@ -40,14 +40,14 @@ BETA1_DISC = 0.9
 BETA2_DEC = 0.999
 BETA2_DISC = 0.999
 
-START_PRETRAINED = True
+START_PRETRAINED = False
 
-WEIGHT_REC_LOSS = 0.2
-WEIGHT_DSIM_LOSS = 0.6
-WEIGHT_SSIM_LOSS = 0.2
+WEIGHT_REC_LOSS = 0.4
+WEIGHT_DSIM_LOSS = 0.0
+WEIGHT_SSIM_LOSS = 0.6
 
 host = socket.gethostname()
-if TEST_CONFIG or host == "piggypiggy":
+if TEST_CONFIG or host == "piggypiggy" or host == "LORISPC":
     GPU_ID = 0
 else:
     GPU_ID = 1
@@ -90,6 +90,7 @@ with h5py.File(encoder_dataset_path, 'r') as enc:
     for i in range(0, NUM_IMAGES - BATCH_SIZE, BATCH_SIZE):
         BATCH_COUNT += 1
 
+
 def generator():
     with h5py.File(main_dataset_path, 'r') as ds, h5py.File(encoder_dataset_path, 'r') as enc:
         for i in range(0, NUM_IMAGES-BATCH_SIZE, BATCH_SIZE):
@@ -124,6 +125,7 @@ encoder = keras.Model(classifier.input, classifier.get_layer("global_average_poo
 del classifier
 
 decoder_optimizer = tf.keras.optimizers.Adam(learning_rate=LEARN_RATE_DEC, beta_1=BETA1_DEC, beta_2=BETA2_DEC)
+
 
 def deep_sim_loss(images, y_pred):
     y_true = encoder(images, training=False)
@@ -184,7 +186,7 @@ dsim_model.compile(
 callback = tf.keras.callbacks.EarlyStopping(monitor='g_loss', patience=100, restore_best_weights=False)
 dsim_model.fit(ds_counter, batch_size=1, epochs=EPOCHS, steps_per_epoch=math.floor(NUM_IMAGES/BATCH_SIZE), callbacks=[callback])
 
-decoder.save(os.path.join(basepath, "../models/decoder_dsim"))
+decoder.save(os.path.join(basepath, "../models/decoder_no_dsim"))
 
 
 

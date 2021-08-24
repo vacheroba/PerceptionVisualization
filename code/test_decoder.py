@@ -26,6 +26,7 @@ import matplotlib.cm as cm
 import cv2
 import random
 
+
 def make_gradcam_heatmap(
     img_array, model, last_conv_layer_name, classifier_layer_names, class_index=-1
 ):
@@ -249,8 +250,8 @@ def viz_and_save(idx):
         imagesprite = canvas.create_image(0, 0, image=photoimage, anchor="nw")
         root.update()
         print(accepted)
-        #sv = input("Any key to continue")
-        sv = "ehwjrejrejtejt"
+        sv = input("Any key to continue")
+        # sv = "ehwjrejrejtejt"
 
         predline = predline[:-2]+"\n"
         labelline = labelline[:-2] + "\n"
@@ -391,8 +392,8 @@ if __name__ == "__main__":
         [38, 72, 12, 42, 65, 15, 0, 10, 45, 95, 58, 62, 3, 61, 90, 35, 18, 36, 107, 101, 13, 53, 21, 26, 9, 59, 41, 60,
          93, 33])
 
-    #viz_and_save(rand_perm)
-    viz_and_save(range(801, 1000))
+    viz_and_save(rand_perm)
+    # viz_and_save(range(801, 1000))
 
     # create_additional_viz(rand_perm)
 
