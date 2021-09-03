@@ -1,5 +1,4 @@
-# Takes the EfficientNetB7 last convolutional results and creates the dataset in dataset_encoder_imagenet
-# to then be used to train the decoder
+# Creates a dataset of encodings of ImageNet images plus their original form
 
 import pandas as pd
 import numpy as np
@@ -20,57 +19,53 @@ import utils
 import h5py
 import tensorflow as tf
 import gc
+import random
+
+random.seed(2222)
 
 physical_devices = tf.config.list_physical_devices('GPU')
 tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 basepath = os.getcwd()
-imagenetpath = os.path.join(basepath, "../datasets/ImageNet/imagenet_object_localization_patched2019.tar/ILSVRC/Data/CLS-LOC/test")
+imagenetpath = os.path.join(basepath, "../datasets/ImageNet/imagenet_object_localization_patched2019/ILSVRC/Data/CLS-LOC/test")
+modelpath = os.path.join(basepath, "../models/classifier")
 
-base_model = tf.keras.applications.EfficientNetB0(
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax"
-)
+model = keras.models.load_model(modelpath, custom_objects={"bp_mll_loss": bp_mll_loss, "euclidean_distance_loss": utils.euclidean_distance_loss})
 
-encoder = keras.Model(base_model.input, base_model.get_layer("top_activation").output)
-del base_model
+# Creates encoder by removing last layers from the classifier
+print("Transforming model")
+feature_layer = "global_average_pooling2d"
+encoder = keras.Model(inputs=model.input, outputs=model.get_layer(feature_layer).input)
+del model
 
-num_images = 20000
+num_images = 8000
 
-# For B7
-# X_train = np.zeros([num_images, 600, 600, 3], dtype=np.uint8)
-# E_train = np.zeros([num_images, 19, 19, 2560], dtype=np.float32)
-
-# For B0
-X_train = np.zeros([num_images, 224, 224, 3], dtype=np.uint8)
-E_train = np.zeros([num_images, 7, 7, 1280], dtype=np.float32)
+X_train = np.zeros([num_images, 224, 224, 3], dtype=np.float32)
+E_train = np.zeros([num_images, 7, 7, 2048], dtype=np.float32)
 
 print("Loading images, total")
 image_paths = os.listdir(imagenetpath)
+random.shuffle(image_paths)
 print(len(image_paths))
 
 # img_size = 600
 img_size = 224
 
 for i in range(0, num_images):
-    if i % 100 == 0 and i > 0:
-        E_train[i-100:i, :, :, :] = encoder.predict(X_train[i-100:i, :, :, :])
-        print(i)
-    img = Image.open(os.path.join(imagenetpath, image_paths[i]))
+    img = Image.open(os.path.join(imagenetpath, image_paths[i])).convert('RGB')
     img = img.resize((img_size, img_size))
-    imgarray = np.array(img)
-    if imgarray.shape == (img_size, img_size):
-        h = np.zeros([img_size, img_size, 3]).astype(np.uint8)
-        h[:, :, 0] = imgarray
-        h[:, :, 1] = imgarray
-        h[:, :, 2] = imgarray
-        imgarray = h
+    imgarray = np.array(img).astype(np.float32)/255.0
+    # if imgarray.shape == (img_size, img_size):
+    #     h = np.zeros([img_size, img_size, 3]).astype(np.uint8)
+    #     h[:, :, 0] = imgarray
+    #     h[:, :, 1] = imgarray
+    #     h[:, :, 2] = imgarray
+    #     imgarray = h
     X_train[i, :, :, :] = imgarray
+
+    if i % 100 == 99:
+        E_train[i-99:i+1, :, :, :] = encoder.predict(X_train[i-99:i+1, :, :, :])
+        print(i)
     # E_train[i, :, :, :] = encoder.predict(X_train[i:i+1, :, :, :])
 
 # Rescales images
@@ -84,13 +79,14 @@ print(X_train.shape)
 
 # Saves in h5
 print("Saving result")
-datasetpath = os.path.join(basepath, "../datasets/dataset_encoder_imagenet_rescaled.h5")
+datasetpath = os.path.join(basepath, "../datasets/dataset_encoder_imagenet.h5")
 hf = h5py.File(datasetpath, 'w')
 hf.create_dataset('E_train', data=E_train)
-del E_train
-gc.collect()
-X_train = X_train.astype(np.float32)/255.0
-hf.create_dataset('X_train', data=X_train)
+hf.close()
+
+datasetpath = os.path.join(basepath, "../datasets/dataset_imagenet.h5")
+hf = h5py.File(datasetpath, 'w')
+hf.create_dataset('X_Train', data=X_train)
 hf.close()
 
 

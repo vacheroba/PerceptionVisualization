@@ -142,7 +142,7 @@ tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 basepath = os.getcwd()
 decoder_path = os.path.join(basepath, "../models/decoder_dsim_250_0.4dsim_0.2rec_0.4ssim")
-decoder_ssim_path = os.path.join(basepath, "../models/decoder_ssim")
+decoder_ssim_path = os.path.join(basepath, "../models/decoder_no_dsim")  # decoder_ssim
 # decoder_ssim_path = os.path.join(basepath, "../models/decoder_gan_Experiment3(good)")
 classifier_path = os.path.join(basepath, "../models/classifier")
 main_dataset_path = os.path.join(basepath, "../datasets/dataset.h5")
@@ -157,6 +157,7 @@ decoder_ssim = keras.models.load_model(decoder_ssim_path, custom_objects={"bp_ml
                                                             "rgb_ssim_loss": utils.rgb_ssim_loss})
 
 classifier = keras.models.load_model(classifier_path, custom_objects={"bp_mll_loss": bp_mll_loss, "euclidean_distance_loss": utils.euclidean_distance_loss, "rgb_ssim_loss": utils.rgb_ssim_loss})
+encoder = keras.Model(classifier.input, classifier.get_layer("global_average_pooling2d").input)
 
 decoder.summary()
 classifier.summary()
@@ -176,11 +177,36 @@ root.geometry('900x800')
 canvas = tkinter.Canvas(root, width=896, height=800)
 canvas.pack()
 
+
+def image_distance(im1, im2):
+    im1 = im1.astype(float)/255.0
+    im2 = im2.astype(float)/255.0
+
+    # MSE
+    return tf.keras.metrics.mean_squared_error(im1, im2)
+
+    # SSIM
+    # return utils.rgb_ssim_loss(im1.reshape([1,224,224,3]), im2.reshape([1,224,224,3]))
+
+    # DSIM MSE
+    # emb1 = encoder(im1.reshape([1,224,224,3]))
+    # emb2 = encoder(im2.reshape([1,224,224,3]))
+    # return tf.keras.metrics.mean_squared_error(emb1, emb2)
+
+
 def viz_and_save(idx):
     # infofile = open(os.path.join(basepath, "../images/info.txt"), 'w')
     labelsfile = open(os.path.join(basepath, "../images/labels.txt"), 'w')
     predictionsfile = open(os.path.join(basepath, "../images/predictions.txt"), 'w')
     explainedfile = open(os.path.join(basepath, "../images/explained.txt"), 'w')
+    similarityfile = open(os.path.join(basepath, "../images/similarity.txt"), 'w')
+
+    similarity_correct = []
+    similarity_incorrect = []
+    similarity_disjoint = []
+    similarity_parcorrect = []
+    similarity_empty = []
+
     for i in idx:
         reconstructed = ((decoder.predict(E_test[i:i+1, :, :, :]))*255).squeeze().astype(np.uint8)
         reconstructed_ssim = ((decoder_ssim.predict(E_test[i:i+1, :, :, :]))*255).squeeze().astype(np.uint8)
@@ -243,15 +269,71 @@ def viz_and_save(idx):
                 predline += str(elem) + ", "
             count += 1
         argmax = classes.argmax()
-        accepted.append(("TOP: "+importdataset.CLASS_NAMES[argmax], classes[argmax]))
+        # accepted.append(("TOP: "+importdataset.CLASS_NAMES[argmax], classes[argmax]))
         expline = importdataset.CLASS_NAMES[argmax]
         image = Image.fromarray(res)
-        photoimage = ImageTk.PhotoImage(image)
-        imagesprite = canvas.create_image(0, 0, image=photoimage, anchor="nw")
-        root.update()
+
+        dovis = False
+
+        if dovis:
+            photoimage = ImageTk.PhotoImage(image)
+            imagesprite = canvas.create_image(0, 0, image=photoimage, anchor="nw")
+            root.update()
+
         print(accepted)
-        sv = input("Any key to continue")
-        # sv = "ehwjrejrejtejt"
+
+        accepted_classes = [elem[0] for elem in accepted]
+        target_classes = [elem[0] for elem in correct]
+
+        # Set correct prediction
+        # 1 means that predictions and targets coincide
+        # -1 means that none of the targets are in the predictions (the sets are disjoint)
+        # 0 means that some of the targets are in the predictions
+        # -2 means empty prediction
+        # -3 means that one of the predictions is NOT in the target set
+        correct_prediction = None
+
+        tinp = 0
+        pint = 0
+
+        for elem in target_classes:
+            if elem in accepted_classes:
+                tinp += 1
+
+        for elem in accepted_classes:
+            if elem in target_classes:
+                pint += 1
+
+        if set(accepted_classes) == set(target_classes):
+            correct_prediction = 1
+        elif len(accepted_classes) == 0:
+            correct_prediction = -2
+        elif pint == tinp == 0:
+            correct_prediction = -1
+        elif pint == len(accepted_classes) < len(target_classes):
+            correct_prediction = 0
+        elif pint > 0 and tinp > 0:
+            correct_prediction = -3
+
+        distance = image_distance(reconstructed, reconstructed_ssim)
+
+        if correct_prediction == 1:
+            similarity_correct.append(distance)
+        elif correct_prediction == -1:
+            similarity_disjoint.append(distance)
+        elif correct_prediction == -2:
+            similarity_empty.append(distance)
+        elif correct_prediction == 0:
+            similarity_parcorrect.append(distance)
+        elif correct_prediction == -3:
+            similarity_incorrect.append(distance)
+
+        similarityfile.writelines([str(correct_prediction) + "," + str(np.mean(distance))+"\n"])
+
+        print("Prediction was " + str(correct_prediction))
+
+        # sv = input("Any key to continue")
+        sv = "ehwjrejrejtejt"
 
         predline = predline[:-2]+"\n"
         labelline = labelline[:-2] + "\n"
@@ -268,6 +350,9 @@ def viz_and_save(idx):
 
         opt1 = Image.fromarray(np.concatenate((original, cammask, mask_1), axis=1))
         opt2 = Image.fromarray(np.concatenate((original, cammask, mask_2), axis=1))
+
+        if sv == "c":
+            Image.fromarray(np.concatenate((original, mask_1, mask_2), axis=1)).save(os.path.join(basepath, "../images/" + str(i) + ".jpg"))
 
         if sv == "1":
             opt1.save(os.path.join(basepath, "../images/" + str(i) + ".jpg"))
@@ -299,6 +384,17 @@ def viz_and_save(idx):
     explainedfile.close()
     labelsfile.close()
 
+    print("Similarities")
+    print("Correct")
+    print("Count: " + str(len(similarity_correct)) + "Mean: " + str(np.mean(similarity_correct)))
+    print("Disjoint")
+    print("Count: " + str(len(similarity_disjoint)) + "Mean: " + str(np.mean(similarity_disjoint)))
+    print("Partially correct")
+    print("Count: " + str(len(similarity_parcorrect)) + "Mean: " + str(np.mean(similarity_parcorrect)))
+    print("Empty prediction")
+    print("Count: " + str(len(similarity_empty)) + "Mean: " + str(np.mean(similarity_empty)))
+    print("Incorrect")
+    print("Count: " + str(len(similarity_incorrect)) + "Mean: " + str(np.mean(similarity_incorrect)))
 
 def info_perm():
     infofile = open(os.path.join(basepath, "../images/sorted/info.txt"), 'w')
@@ -386,14 +482,13 @@ def create_additional_viz(idxs):
         count += 1
 
 
-
 if __name__ == "__main__":
     rand_perm = np.array(
         [38, 72, 12, 42, 65, 15, 0, 10, 45, 95, 58, 62, 3, 61, 90, 35, 18, 36, 107, 101, 13, 53, 21, 26, 9, 59, 41, 60,
          93, 33])
 
-    viz_and_save(rand_perm)
-    # viz_and_save(range(801, 1000))
+    # viz_and_save(rand_perm)
+    viz_and_save(range(801, 1802))
 
     # create_additional_viz(rand_perm)
 

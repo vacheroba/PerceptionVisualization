@@ -26,12 +26,8 @@ import socket
 TEST_CONFIG = False
 
 # ----------------------------------------------------------------------------------------------------------WANDB PARAMS
-if TEST_CONFIG:
-    BATCH_SIZE = 4  # 4
-else:
-    BATCH_SIZE = 32  # 64
 BUFFER_SIZE = 10
-EPOCHS = 100
+EPOCHS = 10
 
 LEARN_RATE_DEC = 1e-4
 LEARN_RATE_DISC = 1e-4
@@ -51,6 +47,11 @@ if TEST_CONFIG or host == "piggypiggy" or host == "LORISPC":
     GPU_ID = 0
 else:
     GPU_ID = 1
+
+if TEST_CONFIG or host == "LORISPC":
+    BATCH_SIZE = 32
+else:
+    BATCH_SIZE = 64
 
 DISC_MODEL = "DECODER DSIM"
 
@@ -105,13 +106,15 @@ ds_counter = ds_counter.repeat(EPOCHS)
 # Load targets (The targets for the decoder are the original inputs, X in main dataset)
 hf = h5py.File(main_dataset_path, 'r')
 if not TEST_CONFIG:
-    Y_test = hf.get('X_Test').value
+    pass
+    # Y_test = hf.get('X_Test').value
 
 # Load inputs(The outputs of the encoder, E in encoder dataset)
 hf.close()
 hf = h5py.File(encoder_dataset_path, 'r')
 if not TEST_CONFIG:
-    E_test = hf.get('E_test').value
+    pass
+    # E_test = hf.get('E_test').value
 hf.close()
 
 if START_PRETRAINED:
